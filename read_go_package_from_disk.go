@@ -13,9 +13,9 @@ func filterTests(f os.FileInfo) bool {
 	return !strings.HasSuffix(f.Name(), "_test.go")
 }
 
-func ReadGoPackageFromDisk(path string) (*ast.Package, error) {
+func ReadGoPackageFromDisk(dir string) (*ast.Package, error) {
 	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, path, filterTests, parser.ParseComments)
+	pkgs, err := parser.ParseDir(fset, dir, filterTests, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
