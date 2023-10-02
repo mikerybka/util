@@ -1,5 +1,7 @@
 package util
 
+import "net/http"
+
 func ServeAll(handlers map[string]http.Handler) error {
 	errs := make(chan error)
 	for addr, h := range handlers {
