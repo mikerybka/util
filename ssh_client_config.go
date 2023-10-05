@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 func SSHClientConfig(user string) (*ssh.ClientConfig, error) {
@@ -18,14 +17,7 @@ func SSHClientConfig(user string) (*ssh.ClientConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	signer, err := ssh.ParsePrivateKey(pKey)
-	if err != nil {
-		return nil, err
-	}
-
-	path = filepath.Join(home, ".ssh/known_hosts")
-	hostkeyCallback, err := knownhosts.New(path)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +27,6 @@ func SSHClientConfig(user string) (*ssh.ClientConfig, error) {
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
-		HostKeyCallback: hostkeyCallback,
+		HostKeyCallback: knownHostsCallback(),
 	}, nil
 }
