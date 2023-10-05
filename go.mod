@@ -1,6 +1,6 @@
 module github.com/mikerybka/util
 
-go 1.21.0
+go 1.20
 
 require golang.org/x/crypto v0.13.0
 
