@@ -2,15 +2,13 @@ package util
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 )
 
-func SHA256(b []byte) string {
+func SHA256(b []byte) []byte {
 	h := sha256.New()
 	_, err := h.Write(b)
 	if err != nil {
 		panic(err)
 	}
-	hash := hex.EncodeToString(h.Sum(nil))
-	return hash
+	return h.Sum(nil)
 }
