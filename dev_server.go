@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 type DevServer struct {
@@ -53,34 +51,11 @@ func (s *DevServer) kill() {
 }
 
 func (s *DevServer) watch() {
-	watch(s.watchDir(), func() {
+	Watch(s.watchDir(), func() {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 		s.build()
 		s.kill()
 		s.run()
 	})
-}
-
-func watch(path string, fn func()) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		panic(err)
-	}
-	defer watcher.Close()
-	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-watcher.Events:
-				fn()
-			case err := <-watcher.Errors:
-				panic(err)
-			}
-		}
-	}()
-	if err := watcher.Add(path); err != nil {
-		panic(err)
-	}
-	<-done
 }
