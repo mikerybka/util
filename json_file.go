@@ -21,6 +21,12 @@ func (f *JSONFile[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Write(b)
 			return
 		}
+		if r.Method == "POST" {
+			// if T is an array {
+			// TODO: handle adding to it
+			// }
+			return
+		}
 		if r.Method == "PUT" {
 			var v T
 			err := json.NewDecoder(r.Body).Decode(&v)
@@ -44,4 +50,5 @@ func (f *JSONFile[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// TODO: handle method calls.
 		}
 	}
+	// TODO: drill into maps arrays and structs
 }
