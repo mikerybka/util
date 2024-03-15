@@ -1,26 +1,73 @@
 package util
 
-import "github.com/fsnotify/fsnotify"
+import (
+	"fmt"
+	"io/fs"
+	"path/filepath"
 
-func Watch(path string, fn func()) {
+	"github.com/fsnotify/fsnotify"
+)
+
+func NewRecursiveWatcher(dir string) (*fsnotify.Watcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			fmt.Println(path)
+			watcher.Add(path)
+		}
+		return nil
+	})
+	return watcher, nil
+}
+
+func Watch(path string, fn func()) error {
+	watcher, err := NewRecursiveWatcher(path)
+	if err != nil {
+		return err
 	}
 	defer watcher.Close()
 	done := make(chan bool)
 	go func() {
 		for {
 			select {
-			case <-watcher.Events:
-				fn()
+			case e := <-watcher.Events:
+				if e.Has(fsnotify.Create) ||
+					e.Has(fsnotify.Write) ||
+					e.Has(fsnotify.Remove) ||
+					e.Has(fsnotify.Rename) {
+					fn()
+				}
 			case err := <-watcher.Errors:
-				panic(err)
+				fmt.Println("Watcher error:", err)
 			}
 		}
 	}()
-	if err := watcher.Add(path); err != nil {
-		panic(err)
-	}
 	<-done
+	return nil
 }
+
+// func WatchDir(path string, fn func()) {
+// 	watcher, err := fsnotify.NewWatcher()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer watcher.Close()
+// 	done := make(chan bool)
+// 	go func() {
+// 		for {
+// 			select {
+// 			case <-watcher.Events:
+// 				fn()
+// 			case err := <-watcher.Errors:
+// 				panic(err)
+// 			}
+// 		}
+// 	}()
+// 	if err := watcher.Add(path); err != nil {
+// 		panic(err)
+// 	}
+// 	<-done
+// }
