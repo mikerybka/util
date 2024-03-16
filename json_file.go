@@ -10,45 +10,31 @@ type JSONFile[T any] struct {
 	Path string
 }
 
-func (f *JSONFile[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := ParsePath(r.URL.Path)
-	if len(path) == 0 {
-		if r.Method == "GET" {
-			b, err := os.ReadFile(f.Path)
-			if err != nil {
-				panic(err)
-			}
-			w.Write(b)
-			return
-		}
-		if r.Method == "POST" {
-			// if T is an array {
-			// TODO: handle adding to it
-			// }
-			return
-		}
-		if r.Method == "PUT" {
-			var v T
-			err := json.NewDecoder(r.Body).Decode(&v)
-			if err != nil {
-				http.Error(w, "bad request", http.StatusBadRequest)
-				return
-			}
-			b, err := json.MarshalIndent(v, "", "  ")
-			if err != nil {
-				panic(err)
-			}
-			err = os.WriteFile(f.Path, b, os.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-			return
-		}
+func (jf *JSONFile[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	f, err := os.Open(jf.Path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if len(path) == 1 {
-		if r.Method == "POST" {
-			// TODO: handle method calls.
-		}
+	var v T
+	err = json.NewDecoder(f).Decode(&v)
+	f.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	// TODO: drill into maps arrays and structs
+	api := &API[T]{
+		Data: v,
+	}
+
+	api.ServeHTTP(w, r)
+
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(jf.Path, b, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 }
