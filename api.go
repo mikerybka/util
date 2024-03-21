@@ -5,16 +5,20 @@ import (
 	"os"
 )
 
+// NewAPI creates a new API object.
 func NewAPI[T any](d T) *API[T] {
 	return &API[T]{
 		Data: d,
 	}
 }
 
+// The API type represents an API backed by any JSON-serializable
+// Go object.
 type API[T any] struct {
 	Data T
 }
 
+// Start binds to PORT (9000 by default) and handles API requests.
 func (a *API[T]) Start() error {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -23,6 +27,7 @@ func (a *API[T]) Start() error {
 	return http.ListenAndServe(":"+port, a)
 }
 
+// ServeHTTP serves a generic REST API.
 func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if api == nil {
 		WriteNotFound(w)
