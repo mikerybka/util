@@ -43,3 +43,12 @@ func (f *File[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+// Start binds to PORT (9000 by default) and handles API requests.
+func (f *File[T]) Start() error {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "9000"
+	}
+	return http.ListenAndServe(":"+port, f)
+}
