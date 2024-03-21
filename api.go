@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+func NewAPI[T any](d T) *API[T] {
+	return &API[T]{
+		Data: d,
+	}
+}
+
 type API[T any] struct {
 	Data T
 }
