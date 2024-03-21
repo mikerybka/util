@@ -1,40 +1,69 @@
 package util
 
 import (
-	"encoding/json"
 	"net/http"
+	"os"
 )
 
 type API[T any] struct {
 	Data T
 }
 
+func (a *API[T]) Start() error {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "9000"
+	}
+	return http.ListenAndServe(":"+port, a)
+}
+
 func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if api == nil {
+		WriteNotFound(w)
+		return
+	}
 	path := ParsePath(r.URL.Path)
-	if len(path) == 0 {
-		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(api.Data)
-			return
-		}
-		if r.Method == "POST" {
-			// if T is an array {
-			// TODO: handle adding to it
-			// }
-			return
-		}
-		if r.Method == "PUT" {
-			err := json.NewDecoder(r.Body).Decode(&api.Data)
-			if err != nil {
-				http.Error(w, "bad request", http.StatusBadRequest)
-				return
+	switch len(path) {
+	case 0:
+		switch r.Method {
+		case "GET":
+			WriteJSON(w, api.Data)
+		case "POST":
+			if IsArray(api.Data) {
+				panic("not implemented")
+			} else if IsMap(api.Data) {
+				panic("not implemented")
+			} else {
+				WriteMethodNotAllowed(w)
 			}
-			return
+		case "PUT":
+			HandlePUT(w, r, api.Data)
+		default:
+			WriteNotFound(w)
 		}
-	}
-	if len(path) == 1 {
-		if r.Method == "POST" {
-			// TODO: handle method calls.
+	case 1:
+		if IsArray(api.Data) {
+			switch r.Method {
+			case "DELETE":
+				panic("not implemented")
+			case "PUT":
+				panic("not implemented")
+			default:
+				panic("not implemented")
+			}
+		} else if IsMap(api.Data) {
+			switch r.Method {
+			case "DELETE":
+				panic("not implemented")
+			case "PUT":
+				panic("not implemented")
+			default:
+				panic("not implemented")
+			}
+		} else {
+			panic("not implemented")
 		}
+	default:
+		panic("not implemented")
 	}
-	// TODO: drill into maps arrays and structs
 }
