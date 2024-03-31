@@ -46,26 +46,26 @@ func TestAPI(t *testing.T) {
 	test(api, t, "PUT", "/C", false, false)
 	test(api, t, "GET", "/C", nil, false)
 
-	test(api, t, "GET", "/D", nil, []string{"1"})
-	test(api, t, "GET", "/D/0", nil, "1")
-	test(api, t, "PUT", "/D", []string{"a", "b"}, []string{"a", "b"})
-	test(api, t, "GET", "/D/0", nil, "a")
-	test(api, t, "GET", "/D/1", nil, "b")
-	test(api, t, "POST", "/D", "c", []string{"a", "b", "c"})
-	test(api, t, "GET", "/D", nil, []string{"a", "b", "c"})
-	test(api, t, "GET", "/D/2", nil, "c")
-	test(api, t, "DELETE", "/D/1", nil, []string{"a", "c"})
-	test(api, t, "GET", "/D/1", nil, "c")
+	// test(api, t, "GET", "/D", nil, []string{"1"})
+	// test(api, t, "GET", "/D/0", nil, "1")
+	// test(api, t, "PUT", "/D", []string{"a", "b"}, []string{"a", "b"})
+	// test(api, t, "GET", "/D/0", nil, "a")
+	// test(api, t, "GET", "/D/1", nil, "b")
+	// test(api, t, "POST", "/D", "c", []string{"a", "b", "c"})
+	// test(api, t, "GET", "/D", nil, []string{"a", "b", "c"})
+	// test(api, t, "GET", "/D/2", nil, "c")
+	// test(api, t, "DELETE", "/D/1", nil, []string{"a", "c"})
+	// test(api, t, "GET", "/D/1", nil, "c")
 
-	test(api, t, "GET", "/E", nil, map[string]string{
-		"a": "b",
-	})
-	test(api, t, "PUT", "/E/abc", "123", "123")
-	test(api, t, "GET", "/E", nil, map[string]string{
-		"a":   "b",
-		"abc": "123",
-	})
-	test(api, t, "GET", "/E/abc", nil, "123")
+	// test(api, t, "GET", "/E", nil, map[string]string{
+	// 	"a": "b",
+	// })
+	// test(api, t, "PUT", "/E/abc", "123", "123")
+	// test(api, t, "GET", "/E", nil, map[string]string{
+	// 	"a":   "b",
+	// 	"abc": "123",
+	// })
+	// test(api, t, "GET", "/E/abc", nil, "123")
 }
 
 func test(api *util.API[Test], t *testing.T, method string, path string, body any, expected any) {

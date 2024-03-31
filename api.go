@@ -75,7 +75,17 @@ func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			WriteJSON(w, api.Data)
 		case "POST":
 			if IsArray(api.Data) {
-				panic("not implemented")
+				arr := reflect.ValueOf(api.Data)
+				elemType := arr.Type().Elem()
+				newValue := reflect.New(elemType).Interface()
+				err := json.NewDecoder(r.Body).Decode(newValue)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				arr = reflect.Append(arr, reflect.ValueOf(newValue))
+				api.Data = arr.Interface().(T)
+				json.NewEncoder(w).Encode(newValue)
 			} else {
 				WriteMethodNotAllowed(w)
 			}
@@ -107,12 +117,33 @@ func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				item.Set(reflect.ValueOf(newValue))
+				json.NewEncoder(w).Encode(newValue)
 				return
 			} else if IsMap(api.Data) {
-				panic("not implemented")
+				v := reflect.ValueOf(api.Data)
+				key := reflect.ValueOf(path[0])
+				newValue := reflect.New(v.Type().Elem())
+				a := newValue.Interface()
+				err := json.NewDecoder(r.Body).Decode(a)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				v.SetMapIndex(key, newValue)
+				json.NewEncoder(w).Encode(a)
 				return
 			} else if IsStruct(api.Data) {
-				panic("not implemented")
+				// https://stackoverflow.com/questions/6395076/using-reflect-how-do-you-set-the-value-of-a-struct-field
+				v := reflect.ValueOf(api.Data)
+				f := v.FieldByName(path[0])
+				newValue := reflect.New(f.Addr().Type())
+				a := newValue.Interface()
+				err := json.NewDecoder(r.Body).Decode(a)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				f.Set(newValue)
 				return
 			}
 		}
