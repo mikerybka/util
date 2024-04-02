@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -31,4 +32,12 @@ func (fs *FileSystem) NewSSHClient() (*ssh.Client, error) {
 		return nil, fmt.Errorf("Failed to dial: %s", err)
 	}
 	return client, nil
+}
+
+func (fs *FileSystem) NewSFTPClient() (*sftp.Client, error) {
+	conn, err := fs.NewSSHClient()
+	if err != nil {
+		return nil, err
+	}
+	return sftp.NewClient(conn)
 }
