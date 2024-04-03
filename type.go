@@ -1,5 +1,7 @@
 package util
 
+import "io"
+
 type Type struct {
 	IsScalar  bool
 	Kind      string
@@ -12,15 +14,6 @@ type Type struct {
 	Methods   map[string]*Function
 }
 
-func (t *Type) GoFile() []byte {
-	panic("not implemented")
-}
-func (t *Type) DartFile() []byte {
-	panic("not implemented")
-}
-func (t *Type) TypescriptFile() []byte {
-	panic("not implemented")
-}
-func (t *Type) JavascriptFile() []byte {
+func (t *Type) WriteGoAPI(w io.Writer) error {
 	panic("not implemented")
 }
