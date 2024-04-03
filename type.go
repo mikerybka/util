@@ -11,3 +11,16 @@ type Type struct {
 	Fields    []Field
 	Methods   map[string]*Function
 }
+
+func (t *Type) GoFile() []byte {
+	panic("not implemented")
+}
+func (t *Type) DartFile() []byte {
+	panic("not implemented")
+}
+func (t *Type) TypescriptFile() []byte {
+	panic("not implemented")
+}
+func (t *Type) JavascriptFile() []byte {
+	panic("not implemented")
+}
