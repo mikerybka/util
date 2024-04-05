@@ -137,6 +137,14 @@ func (api *API[T]) handleStructPUT(w http.ResponseWriter, r *http.Request) {
 	f.Set(newValue)
 }
 
+func (api *API[T]) hasMethod(m string) bool {
+	panic("not implemented")
+}
+
+func (api *API[T]) handleMethodCall(m string, w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
 // ServeHTTP serves a generic REST API.
 func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if api == nil {
@@ -175,6 +183,8 @@ func (api *API[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			} else if IsMap(api.Data) {
 				api.handleMapDELETE(w, r)
 			}
+		} else if api.hasMethod(path[0]) {
+			api.handleMethodCall(path[0], w, r)
 		}
 	} else {
 		r.URL.Path = "/" + strings.Join(path[1:], "/")
