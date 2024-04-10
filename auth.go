@@ -31,6 +31,12 @@ func (a *Auth) SendLoginCode(phone string) error {
 	return nil
 }
 
-func (a *Auth) Login(code string) (string, error)
-func (a *Auth) Logout(token string) error
-func (a *Auth) WhoAmI(token string) (string, error)
+func (a *Auth) Login(code string) (string, error) {
+	panic("not implemented")
+}
+func (a *Auth) Logout(token string) error {
+	panic("not implemented")
+}
+func (a *Auth) WhoAmI(token string) (string, error) {
+	panic("not implemented")
+}

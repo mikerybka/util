@@ -63,17 +63,20 @@ func (a *API[T]) dig(n string) *API[any] {
 }
 
 func (api *API[T]) handleArrayPOST(w http.ResponseWriter, r *http.Request) {
-	arr := reflect.ValueOf(api.Data)
-	elemType := arr.Type().Elem()
-	newValue := reflect.New(elemType).Interface()
-	err := json.NewDecoder(r.Body).Decode(newValue)
+	slice := reflect.ValueOf(api.Data)
+	newSlice := reflect.MakeSlice(slice.Type(), slice.Len()+1, slice.Cap()+1)
+	reflect.Copy(newSlice, slice)
+
+	v := reflect.New(slice.Type().Elem())
+	vP := v.Interface()
+	err := json.NewDecoder(r.Body).Decode(vP)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	arr = reflect.Append(arr, reflect.ValueOf(newValue))
-	api.Data = arr.Interface().(T)
-	json.NewEncoder(w).Encode(newValue)
+	slice = reflect.Append(slice, reflect.ValueOf(v))
+	api.Data = slice.Interface().(T)
+	json.NewEncoder(w).Encode(v)
 }
 
 func (api *API[T]) handleArrayPUT(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +118,18 @@ func (api *API[T]) handleMapPUT(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API[T]) handleArrayDELETE(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	idx, err := strconv.Atoi(ParsePath(r.URL.Path)[0])
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	arr := reflect.ValueOf(api.Data)
+	if idx < 0 || idx >= arr.Len() {
+		http.NotFound(w, r)
+		return
+	}
+	newArr := reflect.AppendSlice(arr.Slice(0, idx), arr.Slice(idx+1, arr.Len()))
+	api.Data = newArr.Interface().(T)
 }
 
 func (api *API[T]) handleMapDELETE(w http.ResponseWriter, r *http.Request) {
