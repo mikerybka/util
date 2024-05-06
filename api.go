@@ -69,7 +69,7 @@ func (api *API[T]) handleArrayPOST(w http.ResponseWriter, r *http.Request) {
 
 	v := reflect.New(slice.Type().Elem())
 	vP := v.Interface()
-	err := json.NewDecoder(r.Body).Decode(vP)
+	err := json.NewDecoder(r.Body).Decode(&vP)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -152,7 +152,9 @@ func (api *API[T]) handleStructPUT(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API[T]) hasMethod(m string) bool {
-	panic("not implemented")
+	v := reflect.ValueOf(api.Data)
+	meth := v.MethodByName(m)
+	return !meth.IsZero()
 }
 
 func (api *API[T]) handleMethodCall(m string, w http.ResponseWriter, r *http.Request) {
