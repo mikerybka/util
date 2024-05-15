@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 func IntToID(v int64) string {
 	// Get the hex encoding
-	hex := fmt.Sprintf("%016x", v)
+	hex := []rune(fmt.Sprintf("%016x", v))
 
 	// Swap out our custom values and reverse the output
 	mapping := map[rune]string{
@@ -32,10 +32,4 @@ func IntToID(v int64) string {
 		res = mapping[r] + res
 	}
 	return res
-}
-
-func main() {
-	var v int64
-	v = 213894
-	fmt.Println(IntToID(v))
 }
