@@ -9,6 +9,7 @@ import (
 )
 
 type MultiUserApp struct {
+	Twilio    *TwilioClient
 	AuthFiles FileSystem
 	App       http.Handler
 }
@@ -35,6 +36,7 @@ func (a *MultiUserApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (a *MultiUserApp) AuthHandler() *AuthHandler {
 	return &AuthHandler{
 		AuthFiles: a.AuthFiles,
+		Twilio:    a.Twilio,
 	}
 }
 
