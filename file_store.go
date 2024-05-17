@@ -6,5 +6,9 @@ type FileStore struct {
 	Workdir string
 }
 
-func (fs *FileStore) HasAccess(userID, path string) bool
-func (fs *FileStore) ReadFile(path string) ([]byte, error)
+func (fs *FileStore) HasAccess(userID, path string) bool {
+	panic("not implemented")
+}
+func (fs *FileStore) ReadFile(path string) ([]byte, error) {
+	panic("not implemented")
+}

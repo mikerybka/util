@@ -6,4 +6,6 @@ type Collection struct {
 }
 
 // List returns a list of the first `limit` items after
-func (c *Collection) List(limit, after int)
+func (c *Collection) List(limit, after int) {
+	panic("not implemented")
+}

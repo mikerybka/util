@@ -2,7 +2,9 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -39,6 +41,9 @@ func (a *MultiUserApp) AuthHandler() *AuthHandler {
 func (a *MultiUserApp) Authorized(r *http.Request) (bool, string, error) {
 	token := r.Header.Get("Token")
 	session, err := a.GetSession(token)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, "", nil
+	}
 	if err != nil {
 		return false, "", err
 	}
@@ -66,6 +71,9 @@ func (a *MultiUserApp) Authorized(r *http.Request) (bool, string, error) {
 
 func (a *MultiUserApp) GetSession(token string) (*Session, error) {
 	b, err := a.AuthFiles.ReadFile("/sessions/" + token)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

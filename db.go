@@ -9,10 +9,24 @@ type DB struct {
 	}
 }
 
-func (db *DB) CreateTable(name string) error
-func (db *DB) AddColumn(table, column, typ string) error
-func (db *DB) Insert(name string) error
-func (db *DB) Update(name string) error
-func (db *DB) Delete(name string) error
-func (db *DB) SelectOne(name string) error
-func (db *DB) SelectMany(name string) error
+func (db *DB) CreateTable(name string) error {
+	panic("not implemented")
+}
+func (db *DB) AddColumn(table, column, typ string) error {
+	panic("not implemented")
+}
+func (db *DB) Insert(name string) error {
+	panic("not implemented")
+}
+func (db *DB) Update(name string) error {
+	panic("not implemented")
+}
+func (db *DB) Delete(name string) error {
+	panic("not implemented")
+}
+func (db *DB) SelectOne(name string) error {
+	panic("not implemented")
+}
+func (db *DB) SelectMany(name string) error {
+	panic("not implemented")
+}

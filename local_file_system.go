@@ -17,6 +17,9 @@ func (fs *LocalFileSystem) ReadFile(path string) ([]byte, error) {
 func (fs *LocalFileSystem) ReadDir(path string) ([]string, error) {
 	res := []string{}
 	entries, err := os.ReadDir(filepath.Join(fs.Root, path))
+	if errors.Is(err, os.ErrNotExist) {
+		return []string{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
