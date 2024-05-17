@@ -50,7 +50,7 @@ func (fs *LocalFileSystem) WriteFile(path string, b []byte) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, b, os.ModePerm)
+	return os.WriteFile(filepath.Join(fs.Root, path), b, os.ModePerm)
 }
 func (fs *LocalFileSystem) MakeDir(path string) error {
 	return os.MkdirAll(filepath.Join(fs.Root, path), os.ModePerm)
