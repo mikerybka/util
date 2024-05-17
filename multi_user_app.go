@@ -30,6 +30,12 @@ func (a *MultiUserApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.App.ServeHTTP(w, r)
 }
 
+func (a *MultiUserApp) AuthHandler() *AuthHandler {
+	return &AuthHandler{
+		AuthFiles: a.AuthFiles,
+	}
+}
+
 func (a *MultiUserApp) Authorized(r *http.Request) (bool, string, error) {
 	token := r.Header.Get("Token")
 	session, err := a.GetSession(token)

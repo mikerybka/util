@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/json"
-	"net/http"
 	"os"
 	"sync"
 )
@@ -31,24 +30,4 @@ func (f *File[T]) Write() error {
 	f.WriteLock.Lock()
 	defer f.WriteLock.Unlock()
 	return WriteJSONFile(f.Path, f.Data)
-}
-
-func (f *File[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	NewAPI(f.Data).ServeHTTP(w, r)
-
-	if IsMutation(r) {
-		err := f.Write()
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-// Start binds to PORT (9000 by default) and handles API requests.
-func (f *File[T]) Start() error {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "9000"
-	}
-	return http.ListenAndServe(":"+port, f)
 }
