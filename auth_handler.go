@@ -104,7 +104,7 @@ func (a *AuthHandler) Login(phone, code string) (*Session, error) {
 	// And create a new session.
 	var token, sessionPath string
 	for {
-		token = RandomToken(8)
+		token = RandomToken(16)
 		sessionPath = fmt.Sprintf("/users/%s/sessions/%s", phone, token)
 		if !a.AuthFiles.IsFile(sessionPath) {
 			break
