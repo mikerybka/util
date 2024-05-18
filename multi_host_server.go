@@ -26,6 +26,7 @@ func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(os.Stdout).Encode(s)
 	h, ok := s.Hosts[r.URL.Host]
 	if !ok {
+		fmt.Println(r.URL.Host)
 		http.NotFound(w, r)
 		return
 	}
