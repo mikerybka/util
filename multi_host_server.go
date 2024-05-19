@@ -24,9 +24,9 @@ func (s *MultiHostServer) HostPolicy(ctx context.Context, host string) error {
 
 func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(os.Stdout).Encode(s)
-	h, ok := s.Hosts[r.URL.Host]
+	fmt.Println(r.Host)
+	h, ok := s.Hosts[r.Host]
 	if !ok {
-		fmt.Println(r.URL.Host)
 		http.NotFound(w, r)
 		return
 	}
