@@ -14,7 +14,6 @@ type AuthHandler struct {
 }
 
 func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
 	if r.URL.Path == "/send-login-code" {
 		b, err := io.ReadAll(r.Body)
 		if err != nil {

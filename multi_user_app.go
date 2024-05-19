@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -16,7 +15,6 @@ type MultiUserApp struct {
 }
 
 func (a *MultiUserApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
 	if strings.HasPrefix(r.URL.Path, "/auth") {
 		http.StripPrefix("/auth", a.AuthHandler()).ServeHTTP(w, r)
 		return

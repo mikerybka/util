@@ -2,10 +2,8 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -23,8 +21,6 @@ func (s *MultiHostServer) HostPolicy(ctx context.Context, host string) error {
 }
 
 func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(os.Stdout).Encode(s)
-	fmt.Println(r.Host)
 	h, ok := s.Hosts[r.Host]
 	if !ok {
 		http.NotFound(w, r)
