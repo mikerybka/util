@@ -26,6 +26,7 @@ func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	HandleCORS(w, r)
 	h.ServeHTTP(w, r)
 }
 
