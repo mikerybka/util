@@ -70,6 +70,7 @@ type Type struct {
 	IsStruct  bool
 	Fields    []Field
 	Methods   map[string]*Function
+	Default   string
 }
 
 func (t *Type) WriteGoAPI(w io.Writer) error {

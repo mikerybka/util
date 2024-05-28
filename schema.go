@@ -11,6 +11,26 @@ type Schema struct {
 	Fields []Field
 }
 
+func (s *Schema) ReactComponent() *ReactComponent {
+	return &ReactComponent{
+		Name: s.Name,
+		Props: []*Field{
+			{
+				ID:   "url",
+				Name: "URL",
+				Type: StringType,
+			},
+		},
+		Body: []*Statement{
+			{
+				IsAssign: true,
+				Name:     "schema",
+				Value:    &Expression{},
+			},
+		},
+	}
+}
+
 func (s *Schema) Type() *Type {
 	return &Type{
 		IsStruct: true,
