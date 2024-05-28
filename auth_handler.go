@@ -30,6 +30,7 @@ func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		json.NewEncoder(w).Encode(struct{}{})
 		return
 	}
 
