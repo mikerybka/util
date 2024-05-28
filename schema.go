@@ -11,6 +11,13 @@ type Schema struct {
 	Fields []Field
 }
 
+func (s *Schema) Type() *Type {
+	return &Type{
+		IsStruct: true,
+		Fields:   s.Fields,
+	}
+}
+
 func (s *Schema) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		json.NewEncoder(w).Encode(s)
