@@ -26,7 +26,7 @@ func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	HandleCORS(w, r)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	h.ServeHTTP(w, r)
 }
 
