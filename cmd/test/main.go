@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 )
 
 func IntToID(v int64) string {
@@ -35,7 +36,9 @@ func IntToID(v int64) string {
 }
 
 func main() {
-	var v int64
-	v = 213894
-	fmt.Println(IntToID(v))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		s := r.Header.Get("Accept")
+		w.Write([]byte(s))
+	})
+	http.ListenAndServe(":8000", nil)
 }
