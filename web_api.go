@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-// The API type represents an API backed by any JSON-serializable
+// The WebAPI type represents an WebAPI backed by any JSON-serializable
 // Go object.
-type API struct {
+type WebAPI struct {
 	Type     *Type
 	DataPath string
 }
 
 // ServeHTTP serves a generic REST API.
-func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Parse the path into sections
 	path := ParsePath(r.URL.Path)
 
@@ -54,7 +54,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Otherwise, dig one level deeper.
-		next := &API{
+		next := &WebAPI{
 			Type:     api.Type.ElemType,
 			DataPath: filepath.Join(api.DataPath, first),
 		}
@@ -65,7 +65,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If the data is a map, dig.
 	if api.Type.IsMap {
-		next := &API{
+		next := &WebAPI{
 			Type:     api.Type.ElemType,
 			DataPath: filepath.Join(api.DataPath, first),
 		}
@@ -77,7 +77,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if api.Type.IsStruct {
 		for _, f := range api.Type.Fields {
 			if f.ID == first {
-				next := &API{
+				next := &WebAPI{
 					Type:     api.Type.ElemType,
 					DataPath: filepath.Join(api.DataPath, first),
 				}
@@ -94,11 +94,11 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	panic("invalid type")
 }
 
-func (api *API) ServeNotFound(w http.ResponseWriter, r *http.Request) {
+func (api *WebAPI) ServeNotFound(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("null"))
 }
 
-func (api *API) ServePOST(w http.ResponseWriter, r *http.Request) {
+func (api *WebAPI) ServePOST(w http.ResponseWriter, r *http.Request) {
 	// Get the size of the dir
 	entries, err := os.ReadDir(api.DataPath)
 	if err != nil {
@@ -122,7 +122,7 @@ func (api *API) ServePOST(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (api *API) ServeRoot(w http.ResponseWriter, r *http.Request) {
+func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// If the value is a scalar or a pointer, read from file.
 		if api.Type.IsScalar || api.Type.IsPointer {
@@ -158,7 +158,7 @@ func (api *API) ServeRoot(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, "\"%s\": ", f.ID)
 
 				// Build a new API object and serve the field.
-				fieldAPI := &API{
+				fieldAPI := &WebAPI{
 					Type:     f.Type,
 					DataPath: filepath.Join(api.DataPath, f.ID),
 				}
