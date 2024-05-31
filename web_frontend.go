@@ -18,9 +18,5 @@ func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(mainJS)
 		return
 	}
-	if Accept(r, "text/html") {
-		w.Write(mainHTML)
-		return
-	}
-	// TODO: serve JSON.
+	w.Write(mainHTML)
 }

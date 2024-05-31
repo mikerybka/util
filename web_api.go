@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -144,6 +145,7 @@ func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 			for _, entry := range entries {
 				items = append(items, entry.Name())
 			}
+			json.NewEncoder(w).Encode(items)
 			return
 		}
 
@@ -181,7 +183,7 @@ func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "PUT" {
 		// If the value is a scalar or a pointer, write to file.
 		if api.Type.IsScalar || api.Type.IsPointer {
-
+			// TODO
 			return
 		}
 
