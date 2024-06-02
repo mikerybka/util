@@ -12,7 +12,7 @@ var mainJS []byte
 //go:embed web/dist/main.css
 var mainCSS []byte
 
-var htmlTemplate string = `<!DOCTYPE html>
+var htmlTmpl *template.Template = template.Must(template.New("main.html").Parse(`<!DOCTYPE html>
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -26,7 +26,7 @@ var htmlTemplate string = `<!DOCTYPE html>
 		<main id="root">Loading...</main>
 		<script src="/main.js"></script>
 	</body>
-</html>`
+</html>`))
 
 type WebFrontend struct {
 	Favicon      []byte
@@ -34,7 +34,6 @@ type WebFrontend struct {
 	MetaDesc     string
 	MetaAuthor   string
 	MetaKeywords []string
-	htmlTmpl     *template.Template
 }
 
 func (fe *WebFrontend) HTMLData() *HTMLTemplateData {
@@ -53,14 +52,6 @@ func (fe *WebFrontend) HTMLData() *HTMLTemplateData {
 	}
 }
 
-func (fe *WebFrontend) HTMLTemplate() *template.Template {
-	if fe.htmlTmpl == nil {
-		fe.htmlTmpl = template.Must(template.New("main.html").Parse(htmlTemplate))
-	}
-
-	return fe.htmlTmpl
-}
-
 func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/favicon.ico" {
 		w.Write(fe.Favicon)
@@ -75,7 +66,7 @@ func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := fe.HTMLTemplate().Execute(w, fe.HTMLData())
+	err := htmlTmpl.Execute(w, fe.HTMLData())
 	if err != nil {
 		panic(err)
 	}
