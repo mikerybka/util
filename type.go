@@ -61,6 +61,9 @@ func GetType(v any) *Type {
 }
 
 type Type struct {
+	Name       string
+	PluralName string
+
 	IsScalar  bool
 	Kind      string
 	IsPointer bool
