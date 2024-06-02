@@ -26,4 +26,7 @@ func (s *BuildServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/webhooks/github" {
+		// TODO
+	}
 }
