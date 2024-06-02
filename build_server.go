@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -27,6 +28,19 @@ func (s *BuildServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path == "/webhooks/github" {
-		// TODO
+		var req GithubWebhookRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			return
+		}
+
+		path := filepath.Join(s.Workdir, "src", req.Repository.FullName)
+		err = req.Repository.SyncLocal(path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		return
 	}
 }
