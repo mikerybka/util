@@ -20,7 +20,13 @@ type WebAPI struct {
 
 // ServeHTTP serves a generic REST API.
 func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Parse the path into sections
+	// If the request is to the special /meta endpoint, we return the type info.
+	if r.URL.Path == "/meta" {
+		json.NewEncoder(w).Encode(api.Type)
+		return
+	}
+
+	// Parse the path into sections.
 	path := ParsePath(r.URL.Path)
 
 	// If we're at the root, we serve it.
