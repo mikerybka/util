@@ -34,6 +34,7 @@ type WebFrontend struct {
 	MetaDesc     string
 	MetaAuthor   string
 	MetaKeywords []string
+	htmlTmpl     *template.Template
 }
 
 func (fe *WebFrontend) HTMLData() *HTMLTemplateData {
@@ -52,6 +53,14 @@ func (fe *WebFrontend) HTMLData() *HTMLTemplateData {
 	}
 }
 
+func (fe *WebFrontend) HTMLTemplate() *template.Template {
+	if fe.htmlTmpl == nil {
+		fe.htmlTmpl = template.Must(template.New("main.html").Parse(htmlTemplate))
+	}
+
+	return fe.htmlTmpl
+}
+
 func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/favicon.ico" {
 		w.Write(fe.Favicon)
@@ -66,7 +75,7 @@ func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := template.Must(template.New("main.html").Parse(htmlTemplate)).Execute(w, fe.HTMLData())
+	err := fe.HTMLTemplate().Execute(w, fe.HTMLData())
 	if err != nil {
 		panic(err)
 	}
