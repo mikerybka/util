@@ -14,8 +14,9 @@ import (
 // The WebAPI type represents an WebAPI backed by any JSON-serializable
 // Go object.
 type WebAPI struct {
-	Type     *Type
-	DataPath string
+	Types    map[string]Type
+	RootType string
+	Data     FileSystem
 }
 
 // ServeHTTP serves a generic REST API.

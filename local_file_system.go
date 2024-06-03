@@ -10,6 +10,12 @@ type LocalFileSystem struct {
 	Root string
 }
 
+func (fs *LocalFileSystem) Dig(path string) *LocalFileSystem {
+	return &LocalFileSystem{
+		Root: filepath.Join(fs.Root, path),
+	}
+}
+
 func (fs *LocalFileSystem) ReadFile(path string) ([]byte, error) {
 	return os.ReadFile(filepath.Join(fs.Root, path))
 }

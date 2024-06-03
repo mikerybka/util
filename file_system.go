@@ -8,4 +8,5 @@ type FileSystem interface {
 	WriteFile(path string, b []byte) error
 	MakeDir(path string) error
 	Remove(path string) error
+	Dig(path string) FileSystem
 }
