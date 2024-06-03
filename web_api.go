@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -19,11 +17,22 @@ type WebAPI struct {
 	Data     FileSystem
 }
 
+func (api *WebAPI) Type() Type {
+	t, ok := api.Types[api.RootType]
+	if !ok {
+		panic(fmt.Sprintf("invalid type: %s", api.RootType))
+	}
+	return t
+}
+
 // ServeHTTP serves a generic REST API.
 func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If the request is to the special /meta endpoint, we return the type info.
 	if r.URL.Path == "/meta" {
-		json.NewEncoder(w).Encode(api.Type)
+		json.NewEncoder(w).Encode(Metadata{
+			Type:  api.RootType,
+			Types: api.Types,
+		})
 		return
 	}
 
@@ -41,19 +50,19 @@ func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rest := "/" + strings.Join(path[1:], "/")
 
 	// If the type doesn't have nesting, return not found.
-	if api.Type.IsScalar {
+	if api.Type().IsScalar {
 		api.ServeNotFound(w, r)
 		return
 	}
 
 	// If it's a pointer, same thing.
-	if api.Type.IsPointer {
+	if api.Type().IsPointer {
 		api.ServeNotFound(w, r)
 		return
 	}
 
 	// If the data is an array
-	if api.Type.IsArray {
+	if api.Type().IsArray {
 		// As a special case, handle POST requests by appending to the array.
 		if rest == "/" && r.Method == "POST" {
 			// Add to the end of the array
@@ -63,8 +72,9 @@ func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Otherwise, dig one level deeper.
 		next := &WebAPI{
-			Type:     api.Type.ElemType,
-			DataPath: filepath.Join(api.DataPath, first),
+			Types:    api.Types,
+			RootType: api.Type().ElemType,
+			Data:     api.Data.Dig(first),
 		}
 		r.URL.Path = rest
 		next.ServeHTTP(w, r)
@@ -72,22 +82,24 @@ func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the data is a map, dig.
-	if api.Type.IsMap {
+	if api.Type().IsMap {
 		next := &WebAPI{
-			Type:     api.Type.ElemType,
-			DataPath: filepath.Join(api.DataPath, first),
+			Types:    api.Types,
+			RootType: api.Type().ElemType,
+			Data:     api.Data.Dig(first),
 		}
 		r.URL.Path = rest
 		next.ServeHTTP(w, r)
 		return
 	}
 
-	if api.Type.IsStruct {
-		for _, f := range api.Type.Fields {
+	if api.Type().IsStruct {
+		for _, f := range api.Type().Fields {
 			if f.ID == first {
 				next := &WebAPI{
-					Type:     api.Type.ElemType,
-					DataPath: filepath.Join(api.DataPath, first),
+					Types:    api.Types,
+					RootType: api.Type().ElemType,
+					Data:     api.Data.Dig(first),
 				}
 				r.URL.Path = rest
 				next.ServeHTTP(w, r)
@@ -108,7 +120,7 @@ func (api *WebAPI) ServeNotFound(w http.ResponseWriter, r *http.Request) {
 
 func (api *WebAPI) ServePOST(w http.ResponseWriter, r *http.Request) {
 	// Get the size of the dir
-	entries, err := os.ReadDir(api.DataPath)
+	entries, err := api.Data.ReadDir("/")
 	if err != nil {
 		panic(err)
 	}
@@ -117,14 +129,14 @@ func (api *WebAPI) ServePOST(w http.ResponseWriter, r *http.Request) {
 	// Figure out the next ID
 	nextID := strconv.Itoa(dirSize)
 
-	// Read the data
+	// Read the data from the request body
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new object with that ID
-	err = WriteFile(filepath.Join(api.DataPath, nextID), b)
+	err = api.Data.WriteFile(nextID, b)
 	if err != nil {
 		panic(err)
 	}
@@ -133,8 +145,8 @@ func (api *WebAPI) ServePOST(w http.ResponseWriter, r *http.Request) {
 func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// If the value is a scalar or a pointer, read from file.
-		if api.Type.IsScalar || api.Type.IsPointer {
-			b, err := os.ReadFile(api.DataPath)
+		if api.Type().IsScalar || api.Type().IsPointer {
+			b, err := api.Data.ReadFile("/")
 			if err != nil {
 				panic(err)
 			}
@@ -143,40 +155,39 @@ func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// If the value is an array or a map, read the directory.
-		if api.Type.IsArray || api.Type.IsMap {
-			entries, err := os.ReadDir(api.DataPath)
+		if api.Type().IsArray || api.Type().IsMap {
+			entries, err := api.Data.ReadDir("/")
 			if err != nil {
 				panic(err)
 			}
-			items := []string{}
-			for _, entry := range entries {
-				items = append(items, entry.Name())
-			}
-			json.NewEncoder(w).Encode(items)
+			json.NewEncoder(w).Encode(entries)
 			return
 		}
 
 		// If the value is a struct, build a JSON object.
-		if api.Type.IsStruct {
+		if api.Type().IsStruct {
 			// Open the object.
 			w.Write([]byte("{"))
 
 			// Write each field out.
-			for i, f := range api.Type.Fields {
+			for i, f := range api.Type().Fields {
+				// Add a comma if it's not the first field.
+				if i > 0 {
+					fmt.Fprintf(w, ",")
+				}
+
 				// Write the field ID as the key.
 				fmt.Fprintf(w, "\"%s\": ", f.ID)
 
-				// Build a new API object and serve the field.
+				// Build a new API object.
 				fieldAPI := &WebAPI{
-					Type:     f.Type,
-					DataPath: filepath.Join(api.DataPath, f.ID),
+					Types:    api.Types,
+					RootType: f.Type,
+					Data:     api.Data.Dig(f.ID),
 				}
-				fieldAPI.ServeHTTP(w, r)
 
-				// Add a comma if it's not the last field.
-				if i != len(api.Type.Fields)-1 {
-					fmt.Fprintf(w, ",")
-				}
+				// Serve the field.
+				fieldAPI.ServeHTTP(w, r)
 			}
 
 			// Close object.
@@ -189,7 +200,7 @@ func (api *WebAPI) ServeRoot(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "PUT" {
 		// If the value is a scalar or a pointer, write to file.
-		if api.Type.IsScalar || api.Type.IsPointer {
+		if api.Type().IsScalar || api.Type().IsPointer {
 			// TODO
 			return
 		}

@@ -18,7 +18,7 @@ func (s *Schema) ReactComponent() *ReactComponent {
 			{
 				ID:   "url",
 				Name: "URL",
-				Type: StringType,
+				Type: "string",
 			},
 		},
 		Body: []*Statement{
