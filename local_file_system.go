@@ -10,7 +10,7 @@ type LocalFileSystem struct {
 	Root string
 }
 
-func (fs *LocalFileSystem) Dig(path string) *LocalFileSystem {
+func (fs *LocalFileSystem) Dig(path string) FileSystem {
 	return &LocalFileSystem{
 		Root: filepath.Join(fs.Root, path),
 	}
