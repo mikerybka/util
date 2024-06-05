@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -11,12 +12,12 @@ type CI struct {
 	ServiceName   string
 }
 
-func (ci *CI) Start() error {
+func (ci *CI) Start() {
 	for {
 		time.Sleep(time.Minute * time.Duration(ci.PeriodMinutes))
 		err := ci.Run()
 		if err != nil {
-			return err
+			fmt.Println(err)
 		}
 	}
 }
@@ -56,17 +57,35 @@ func (ci *CI) Run() error {
 		return err
 	}
 
-	// If there's been changes, rebuild and restart the server.
-	if changes {
-		err := code.Build(ci.OutFile)
-		if err != nil {
-			return err
-		}
+	// If no changes, we're done.
+	if !changes {
+		return nil
+	}
 
-		err = svc.Restart()
-		if err != nil {
-			return err
-		}
+	// Build the new code.
+	err = code.Build(ci.OutFile)
+	if err != nil {
+		return err
+	}
+
+	// Restart the server.
+	err = svc.Restart()
+	if err != nil {
+		return err
+	}
+
+	// Commit and push the changes upstream.
+	err = repo.AddAll()
+	if err != nil {
+		return err
+	}
+	err = repo.Commit("update deps")
+	if err != nil {
+		return err
+	}
+	err = repo.Push()
+	if err != nil {
+		return err
 	}
 
 	return nil
