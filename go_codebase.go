@@ -22,7 +22,19 @@ func (c *GoCodebase) UpdateDeps() (bool, error) {
 	if len(out) > 0 {
 		return true, nil
 	}
-	return false, nil
+
+	// Check if there are changes.
+	cmd = exec.Command("git", "diff", "--exit-code")
+	cmd.Dir = c.Dir
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		if len(out) > 0 {
+			return false, fmt.Errorf("%s: %s", err, out)
+		}
+		return false, err
+	}
+
+	return len(out) > 0, nil
 }
 
 func (c *GoCodebase) GitRepo() *GitRepo {
