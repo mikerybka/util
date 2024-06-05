@@ -14,11 +14,11 @@ type CI struct {
 
 func (ci *CI) Start() {
 	for {
-		time.Sleep(time.Minute * time.Duration(ci.PeriodMinutes))
 		err := ci.Run()
 		if err != nil {
 			fmt.Println(err)
 		}
+		time.Sleep(time.Minute * time.Duration(ci.PeriodMinutes))
 	}
 }
 
