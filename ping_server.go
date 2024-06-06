@@ -8,7 +8,7 @@ type PingServer struct {
 
 func (s *PingServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Msg == "" {
-		s.Msg = "OK"
+		s.Msg = "ok"
 	}
 	w.Write([]byte(s.Msg))
 }
