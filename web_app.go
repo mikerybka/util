@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -17,14 +18,26 @@ type WebApp struct {
 	Files        FileSystem
 }
 
+func (app *WebApp) Validate() error {
+	if _, ok := app.Types["App"]; ok {
+		return fmt.Errorf("type with name `App` not allowed")
+	}
+	return nil
+}
+
 func (app *WebApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api") {
+		types := app.Types
+		types["App"] = Type{
+			IsMap:    true,
+			ElemType: app.RootType,
+		}
 		http.StripPrefix("/api", &MultiUserApp{
 			Twilio:    app.TwilioClient,
 			AuthFiles: app.Files.Dig("auth"),
 			App: &WebAPI{
 				Types:    app.Types,
-				RootType: "map[string]" + app.RootType,
+				RootType: "App",
 				Data:     app.Files.Dig("data"),
 			},
 		}).ServeHTTP(w, r)

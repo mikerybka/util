@@ -2,7 +2,10 @@ package util
 
 import "strings"
 
-func PopPath(path string) string {
+func PopPath(path string) (string, string, bool) {
 	p := ParsePath(path)
-	return "/" + strings.Join(p[1:], "/")
+	if len(p) == 0 {
+		return "", "", false
+	}
+	return p[0], "/" + strings.Join(p[1:], "/"), true
 }
