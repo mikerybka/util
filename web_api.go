@@ -15,14 +15,6 @@ type WebAPI struct {
 	Data     FileSystem
 }
 
-func (api *WebAPI) FS() *StructuredFilesystem {
-	return &StructuredFilesystem{
-		Types:    api.Types,
-		RootType: api.RootType,
-		Data:     api.Data,
-	}
-}
-
 // func (api *WebAPI) Type() Type {
 // 	if strings.HasPrefix(api.RootType, "map[string]") {
 // 		return Type{
@@ -57,7 +49,7 @@ func (api *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.FS().ServeHTTP(w, r)
+	// api.FS().ServeHTTP(w, r)
 
 	// // Parse the path into sections.
 	// path := ParsePath(r.URL.Path)
