@@ -8,6 +8,17 @@
         <meta name="keywords" content="{{ .KeywordString }}" />
         <link rel="stylesheet" href="/main.css" type="text/css" />
     </head>
-    <body class="{{ .BodyClass }}">
+    <body class="">
+        <form>
+            <div>
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone">{{ .Phone }}</input>
+            </div>
+            <div>
+                <label for="code">Code</label>
+                <input type="number" id="code"></input>
+            </div>
+            <input type="submit">Submit</input>
+        </form>
     </body>
 </html>
