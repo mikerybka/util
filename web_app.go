@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -20,6 +21,10 @@ type WebApp[T any] struct {
 	CoreResourceType string
 	TwilioClient     *TwilioClient
 	Files            FileSystem
+}
+
+func (app *WebApp[T]) KeywordString() string {
+	return strings.Join(app.Keywords, ",")
 }
 
 func (app *WebApp[T]) Metadata() *Metadata {
