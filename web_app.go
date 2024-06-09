@@ -1,6 +1,11 @@
 package util
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+	"os"
+	"text/template"
+)
 
 type WebApp struct {
 	Name             string
@@ -91,9 +96,37 @@ func (app *WebApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *WebApp) GetRoot(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PostRoot(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetOrg(w http.ResponseWriter, r *http.Request)
+var homeTmpl = "home"
+var orgTmpl = "org"
+
+func (app *WebApp) HomeTmpl() *template.Template {
+	return template.Must(template.New("home").Parse(homeTmpl))
+}
+
+func (app *WebApp) OrgTmpl() *template.Template {
+	return template.Must(template.New("org").Parse(orgTmpl))
+}
+
+func (app *WebApp) GetRoot(w http.ResponseWriter, r *http.Request) {
+	app.HomeTmpl().Execute(w, app)
+}
+
+func (app *WebApp) PostRoot(w http.ResponseWriter, r *http.Request) {
+	// TODO: handle admin features
+}
+func (app *WebApp) GetOrg(w http.ResponseWriter, r *http.Request) {
+	p := ParsePath(r.URL.Path)
+	orgID := p[0]
+	entries, err := app.Files.ReadDir("orgs/" + orgID)
+	if errors.Is(err, os.ErrNotExist) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		panic(err)
+	}
+	app.OrgTmpl().Execute(w, entries)
+}
 func (app *WebApp) PutOrg(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) PostOrg(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) GetPath(w http.ResponseWriter, r *http.Request)
@@ -102,7 +135,9 @@ func (app *WebApp) PostPath(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) PatchPath(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) DeletePath(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) GetMeta(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetFavicon(w http.ResponseWriter, r *http.Request)
+func (app *WebApp) GetFavicon(w http.ResponseWriter, r *http.Request) {
+	w.Write(app.Favicon)
+}
 func (app *WebApp) PostAuthLogin(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) GetAuthLogin(w http.ResponseWriter, r *http.Request)
 func (app *WebApp) PostAuthSendLoginCode(w http.ResponseWriter, r *http.Request)
