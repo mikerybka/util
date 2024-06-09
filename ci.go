@@ -14,9 +14,12 @@ type CI struct {
 
 func (ci *CI) Start() {
 	for {
-		err := ci.Run()
+		ok, err := ci.Run()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(time.Now(), "ERROR", err)
+		}
+		if ok {
+			fmt.Println(time.Now(), "DEPLOY")
 		}
 		time.Sleep(time.Minute * time.Duration(ci.PeriodMinutes))
 	}
@@ -40,7 +43,7 @@ func (ci *CI) Serivce() *SystemdService {
 	}
 }
 
-func (ci *CI) Run() error {
+func (ci *CI) Run() (bool, error) {
 	repo := ci.GitRepo()
 	code := ci.Codebase()
 	svc := ci.Serivce()
@@ -48,45 +51,45 @@ func (ci *CI) Run() error {
 	// Pull from github.
 	_, err := repo.Pull()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Run `go get -u` update dependencies.
 	changes, err := code.UpdateDeps()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// If no changes, we're done.
 	if !changes {
-		return nil
+		return false, nil
 	}
 
 	// Build the new code.
 	err = code.Build(ci.OutFile)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Restart the server.
 	err = svc.Restart()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Commit and push the changes upstream.
 	err = repo.AddAll()
 	if err != nil {
-		return err
+		return false, err
 	}
 	err = repo.Commit("update deps")
 	if err != nil {
-		return err
+		return false, err
 	}
 	err = repo.Push()
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
