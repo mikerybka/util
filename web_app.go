@@ -1,13 +1,14 @@
 package util
 
 import (
+	_ "embed"
 	"errors"
 	"net/http"
 	"os"
 	"text/template"
 )
 
-type WebApp struct {
+type WebApp[T any] struct {
 	Name             string
 	Description      string
 	Author           string
@@ -20,7 +21,7 @@ type WebApp struct {
 	Files            FileSystem
 }
 
-func (app *WebApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (app *WebApp[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p := ParsePath(r.URL.Path)
 	if len(p) == 0 {
 		switch r.Method {
@@ -96,25 +97,28 @@ func (app *WebApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var homeTmpl = "home"
-var orgTmpl = "org"
+//go:embed web_templates/home.html
+var homeTmpl string
 
-func (app *WebApp) HomeTmpl() *template.Template {
+//go:embed web_templates/org.html
+var orgTmpl string
+
+func (app *WebApp[T]) HomeTmpl() *template.Template {
 	return template.Must(template.New("home").Parse(homeTmpl))
 }
 
-func (app *WebApp) OrgTmpl() *template.Template {
+func (app *WebApp[T]) OrgTmpl() *template.Template {
 	return template.Must(template.New("org").Parse(orgTmpl))
 }
 
-func (app *WebApp) GetRoot(w http.ResponseWriter, r *http.Request) {
+func (app *WebApp[T]) GetRoot(w http.ResponseWriter, r *http.Request) {
 	app.HomeTmpl().Execute(w, app)
 }
 
-func (app *WebApp) PostRoot(w http.ResponseWriter, r *http.Request) {
+func (app *WebApp[T]) PostRoot(w http.ResponseWriter, r *http.Request) {
 	// TODO: handle admin features
 }
-func (app *WebApp) GetOrg(w http.ResponseWriter, r *http.Request) {
+func (app *WebApp[T]) GetOrg(w http.ResponseWriter, r *http.Request) {
 	p := ParsePath(r.URL.Path)
 	orgID := p[0]
 	entries, err := app.Files.ReadDir("orgs/" + orgID)
@@ -127,18 +131,25 @@ func (app *WebApp) GetOrg(w http.ResponseWriter, r *http.Request) {
 	}
 	app.OrgTmpl().Execute(w, entries)
 }
-func (app *WebApp) PutOrg(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PostOrg(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetPath(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PutPath(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PostPath(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PatchPath(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) DeletePath(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetMeta(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetFavicon(w http.ResponseWriter, r *http.Request) {
+
+func (app *WebApp[T]) PutOrg(w http.ResponseWriter, r *http.Request) {
+
+}
+func (app *WebApp[T]) PostOrg(w http.ResponseWriter, r *http.Request) {
+
+}
+func (app *WebApp[T]) GetPath(w http.ResponseWriter, r *http.Request) {
+
+}
+func (app *WebApp[T]) PutPath(w http.ResponseWriter, r *http.Request)    {}
+func (app *WebApp[T]) PostPath(w http.ResponseWriter, r *http.Request)   {}
+func (app *WebApp[T]) PatchPath(w http.ResponseWriter, r *http.Request)  {}
+func (app *WebApp[T]) DeletePath(w http.ResponseWriter, r *http.Request) {}
+func (app *WebApp[T]) GetMeta(w http.ResponseWriter, r *http.Request)    {}
+func (app *WebApp[T]) GetFavicon(w http.ResponseWriter, r *http.Request) {
 	w.Write(app.Favicon)
 }
-func (app *WebApp) PostAuthLogin(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetAuthLogin(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) PostAuthSendLoginCode(w http.ResponseWriter, r *http.Request)
-func (app *WebApp) GetAuthSendLoginCode(w http.ResponseWriter, r *http.Request)
+func (app *WebApp[T]) PostAuthLogin(w http.ResponseWriter, r *http.Request)         {}
+func (app *WebApp[T]) GetAuthLogin(w http.ResponseWriter, r *http.Request)          {}
+func (app *WebApp[T]) PostAuthSendLoginCode(w http.ResponseWriter, r *http.Request) {}
+func (app *WebApp[T]) GetAuthSendLoginCode(w http.ResponseWriter, r *http.Request)  {}
