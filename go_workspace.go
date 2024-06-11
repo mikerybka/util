@@ -1,7 +1,10 @@
 package util
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,8 +15,42 @@ type GoWorkspace struct {
 	Dir string
 }
 
+func (ws *GoWorkspace) ServeGithubWebhook(w http.ResponseWriter, r *http.Request) {
+	req := &GithubWebhookRequest{}
+	err := json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ghID := req.Repository.FullName
+	pkg := "github.com/" + ghID
+
+	err = ws.Pull(pkg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = ws.Pull(pkg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (w *GoWorkspace) Build(pkg string, o string) error {
 	cmd := exec.Command("go", "build", "-o", o, pkg)
+	cmd.Dir = w.Dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("go build: %s: %s", err.Error(), out)
+	}
+	return nil
+}
+
+func (w *GoWorkspace) Install(pkg string) error {
+	cmd := exec.Command("go", "install", pkg)
 	cmd.Dir = w.Dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -62,8 +99,20 @@ func (w *GoWorkspace) Clone(pkg string) error {
 }
 
 func (w *GoWorkspace) Pull(pkg string) error {
+	dir := filepath.Join(w.Dir, "src", pkg)
+
+	// If the repo doesn't exist, clone it.
+	_, err := os.Stat(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return w.Clone(pkg)
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	// Run git pull
 	cmd := exec.Command("git", "pull")
-	cmd.Dir = filepath.Join(w.Dir, "src", pkg)
+	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("gh repo clone: %s: %s", err.Error(), out)

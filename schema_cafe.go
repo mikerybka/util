@@ -1,72 +1,33 @@
 package util
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
+	"path/filepath"
 )
 
 type SchemaCafe struct {
-	Data FileSystem
+	Schemas map[string]*Schema
 }
 
 func (s *SchemaCafe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := ParsePath(r.URL.Path)
 
 	if len(path) == 0 {
-		s.Homepage(w, r)
+		fmt.Fprintf(w, "<div class=\"schema-list\">")
+		for id := range s.Schemas {
+			fmt.Fprintf(w, "<a href=\"%s\">%s</a>", filepath.Join(r.URL.Path, id), id)
+		}
+		fmt.Fprintf(w, "</div>")
 		return
 	}
 
-	orgID := path[0]
-	org := s.GetOrg(orgID)
-	http.StripPrefix("/"+orgID, org).ServeHTTP(w, r)
-	if IsMutation(r) {
-		err := s.SaveOrg(org)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func (s *SchemaCafe) Homepage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "schema.cafe")
-}
-
-func (s *SchemaCafe) SaveOrg(org *SchemaCafeOrg) error {
-	path := "/" + org.ID
-	b, err := json.Marshal(org)
-	if err != nil {
-		panic(err)
-	}
-	return s.Data.WriteFile(path, b)
-}
-
-func (s *SchemaCafe) GetOrg(id string) *SchemaCafeOrg {
-	// Read /:id
-	b, err := s.Data.ReadFile("/" + id)
-
-	// Return nil if file doesn't exist.
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
+	schemaID := path[0]
+	schema, ok := s.Schemas[schemaID]
+	if !ok {
+		http.NotFound(w, r)
+		return
 	}
 
-	// Panic on any other error.
-	if err != nil {
-		panic(err)
-	}
-
-	// Read the data into an object.
-	org := &SchemaCafeOrg{}
-	err = json.Unmarshal(b, org)
-
-	// This should never happen.
-	if err != nil {
-		panic(err)
-	}
-
-	// Return it.
-	return org
+	schema.ServeHTTP(w, r)
 }
