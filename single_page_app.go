@@ -9,8 +9,13 @@ type SinglePageApp struct {
 }
 
 func (spa *SinglePageApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p := ParsePath(r.URL.Path)
-	if len(p) == 0 {
-
+	if r.URL.Path == "/main.css" {
+		w.Write(spa.mainCSS)
+		return
 	}
+	if r.URL.Path == "/main.js" {
+		w.Write(spa.mainJS)
+		return
+	}
+	w.Write(spa.mainHTML)
 }
