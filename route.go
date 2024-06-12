@@ -15,11 +15,16 @@ func (route *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.URL.Path = rest
+
 	h, found := route.Static[first]
 	if !found {
-		h = route.Dynamic(first)
+		if route.Dynamic != nil {
+			h = route.Dynamic(first)
+		} else {
+			h = http.NotFoundHandler()
+		}
 	}
 
-	r.URL.Path = rest
 	h.ServeHTTP(w, r)
 }

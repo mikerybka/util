@@ -11,5 +11,5 @@ type Link struct {
 }
 
 func (l *Link) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "<a href=\"%s\">%s</a>")
+	fmt.Fprintf(w, "<a href=\"%s\">%s</a>", l.Href, l.Name)
 }

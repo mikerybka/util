@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -12,7 +13,18 @@ type Schema struct {
 }
 
 func (s *Schema) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ServeStruct(w, r)
+	fmt.Fprintf(w, "<div class=\"schema\">")
+	f := &Field{
+		ID:   "id",
+		Name: "ID",
+		Type: "string",
+	}
+	f.ServeHTTP(w, r)
+	f = &Field{
+		ID:   "fields",
+		Name: "Fields",
+		Type: "[]util.Field",
+	}
+	f.ServeHTTP(w, r)
+	fmt.Fprintf(w, "</div>")
 }
-
-func ServeStruct(w http.ResponseWriter, r *http.Request) {}
