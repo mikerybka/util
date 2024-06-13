@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"runtime/debug"
+	"strings"
 
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -18,6 +19,7 @@ type MultiHostServer struct {
 }
 
 func (s *MultiHostServer) HostPolicy(ctx context.Context, host string) error {
+	host = strings.TrimPrefix(host, "www.")
 	_, ok := s.Hosts[host]
 	if ok {
 		return nil
@@ -40,8 +42,16 @@ func (s *MultiHostServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b, _ := httputil.DumpRequest(r, true)
 	log.Println(string(b))
 
+	// Handle www. redirects.
+	if strings.HasPrefix(r.Host, "www.") {
+		url := r.URL
+		url.Host = strings.TrimPrefix("www.", url.Host)
+		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
+		return
+	}
+
 	// Find the handler for the host.
-	h, ok := s.Hosts[r.Host]
+	h, ok := s.Hosts[strings.TrimPrefix(r.Host, "www.")]
 	if !ok {
 		http.NotFound(w, r)
 		return
