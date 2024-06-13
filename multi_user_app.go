@@ -33,8 +33,8 @@ func (a *MultiUserApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.App.ServeHTTP(w, r)
 }
 
-func (a *MultiUserApp) AuthHandler() *AuthHandler {
-	return &AuthHandler{
+func (a *MultiUserApp) AuthHandler() *MultiUserAuthHandler {
+	return &MultiUserAuthHandler{
 		AuthFiles: a.AuthFiles,
 		Twilio:    a.Twilio,
 	}

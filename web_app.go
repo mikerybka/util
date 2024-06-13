@@ -34,8 +34,8 @@ func (app *WebApp[T]) Metadata() *Metadata {
 	}
 }
 
-func (app *WebApp[T]) AuthHandler() *AuthHandler {
-	return &AuthHandler{
+func (app *WebApp[T]) AuthHandler() *MultiUserAuthHandler {
+	return &MultiUserAuthHandler{
 		Twilio:    app.TwilioClient,
 		AuthFiles: app.Files.Dig("auth"),
 	}

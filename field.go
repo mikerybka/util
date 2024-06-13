@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"net/http"
 	"path/filepath"
 )
@@ -17,7 +16,6 @@ func (f *Field) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if name == "" {
 		name = f.ID
 	}
-	fmt.Println(r.URL.Path)
 	l := &Link{
 		Name: name,
 		Href: filepath.Join(r.URL.Path, f.ID),

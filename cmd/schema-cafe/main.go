@@ -8,8 +8,8 @@ import (
 
 func main() {
 	app := &util.Cafe[*util.Schema]{
-		Data: util.Map[*util.Schema]{
-			"tuv": &util.Schema{
+		Data: map[string]*util.Schema{
+			"tuv": {
 				ID:     "tuv",
 				Name:   "TUV",
 				Fields: []util.Field{},

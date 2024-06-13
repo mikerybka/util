@@ -8,12 +8,13 @@ import (
 	"time"
 )
 
-type AuthHandler struct {
+type SingleUserAuthHandler struct {
+	UserPhone string
 	AuthFiles FileSystem
 	Twilio    *TwilioClient
 }
 
-func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (a *SingleUserAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/send-login-code" {
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -56,10 +57,10 @@ func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *AuthHandler) SendLoginCode(phone string) error {
-	// Reject malformed input.
-	if !IsTenDigits(phone) {
-		return fmt.Errorf("expected 10 digit phone number")
+func (a *SingleUserAuthHandler) SendLoginCode(phone string) error {
+	// Reject non-admin users.
+	if phone != a.UserPhone {
+		return fmt.Errorf("unknown user")
 	}
 
 	// Generate a random code for the user.
@@ -88,7 +89,7 @@ func (a *AuthHandler) SendLoginCode(phone string) error {
 	return nil
 }
 
-func (a *AuthHandler) Login(phone, code string) (*Session, error) {
+func (a *SingleUserAuthHandler) Login(phone, code string) (*Session, error) {
 	// Check if the login code is valid.
 	loginCodePath := fmt.Sprintf("/users/%s/login-codes/%s", phone, code)
 	ok := a.AuthFiles.IsFile(loginCodePath)
