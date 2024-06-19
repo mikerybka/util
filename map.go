@@ -2,19 +2,18 @@ package util
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
-type Map[T http.Handler] struct {
+type Map struct {
 	Path  []string
-	Value map[string]T
+	Value map[string]any
 }
 
-func (m *Map[T]) ID() string {
+func (m *Map) ID() string {
 	return JoinPath(m.Path)
 }
 
-func (m *Map[T]) JSON() string {
+func (m *Map) JSON() string {
 	b, err := json.Marshal(m.Value)
 	if err != nil {
 		panic(err)
@@ -22,13 +21,15 @@ func (m *Map[T]) JSON() string {
 	return string(b)
 }
 
-func (m *Map[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	route := &FancyRoute{
-		Root: &MapList[T]{
-			ID:   m.ID,
-			Data: m.Data,
-		},
-		Catchall: nil,
-	}
-	route.ServeHTTP(w, r)
+func (m *Map) Type() string {
+	return "map"
+}
+
+func (m *Map) Ptr() any {
+	return m.Value
+}
+
+func (m *Map) Dig(s string) (Object, bool) {
+	v, ok := m.Value[s]
+	return NewObject(append(m.Path, s), v), ok
 }

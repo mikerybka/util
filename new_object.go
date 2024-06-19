@@ -22,10 +22,22 @@ func NewObject(path []string, v any) Object {
 		}
 	}
 	if IsArray(v) {
+		return &Array{
+			Path:  path,
+			Value: v.([]any),
+		}
 	}
 	if IsMap(v) {
+		return &Map{
+			Path:  path,
+			Value: v.(map[string]any),
+		}
 	}
 	if IsStruct(v) {
+		return &Struct{
+			Path:  path,
+			Value: StructToMap(v),
+		}
 	}
 	panic(fmt.Errorf("unknown type for %s: %v", JoinPath(path), v))
 }

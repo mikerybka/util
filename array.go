@@ -2,20 +2,19 @@ package util
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"strconv"
 )
 
-type Array[T any] struct {
+type Array struct {
 	Path  []string
-	Value []T
+	Value []any
 }
 
-func (a *Array[T]) ID() string {
+func (a *Array) ID() string {
 	return JoinPath(a.Path)
 }
 
-func (a *Array[T]) JSON() string {
+func (a *Array) JSON() string {
 	b, err := json.Marshal(a.Value)
 	if err != nil {
 		panic(err)
@@ -23,18 +22,18 @@ func (a *Array[T]) JSON() string {
 	return string(b)
 }
 
-func (a *Array[T]) Type() string {
+func (a *Array) Type() string {
 	return "array"
 }
 
-func (a *Array[T]) Ptr() any {
+func (a *Array) Ptr() any {
 	return a.Value
 }
 
-func (a *Array[T]) Dig(s string) (Object, bool) {
+func (a *Array) Dig(s string) (Object, bool) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		return nil, false
 	}
-	return NewObject(filepath.Join(a.ID(), s), a.Value[i])
+	return NewObject(append(a.Path, s), a.Value[i]), true
 }

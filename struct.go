@@ -1,34 +1,35 @@
 package util
 
 import (
-	"fmt"
-	"net/http"
-	"path/filepath"
-	"reflect"
+	"encoding/json"
 )
 
-type Struct[T any] struct {
-	Path string
-	Data T
+type Struct struct {
+	Path  []string
+	Value map[string]any
 }
 
-func (s *Struct[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t := reflect.TypeOf(s.Data)
-	for {
-		if t.Kind() == reflect.Pointer {
-			t = t.Elem()
-		} else {
-			break
-		}
+func (s *Struct) ID() string {
+	return JoinPath(s.Path)
+}
+
+func (s *Struct) JSON() string {
+	b, err := json.Marshal(s.Value)
+	if err != nil {
+		panic(err)
 	}
-	if t.Kind() != reflect.Struct {
-		panic("expected struct")
-	}
-	fmt.Fprintf(w, "<div class=\"struct\">")
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		fmt.Fprintf(w, "<div class=\"field\"><a href=\"%s\">%s</a></div>",
-			filepath.Join(r.URL.Path, f.Name), f.Name)
-	}
-	fmt.Fprintf(w, "</div>")
+	return string(b)
+}
+
+func (s *Struct) Type() string {
+	return "struct"
+}
+
+func (s *Struct) Ptr() any {
+	return s.Value
+}
+
+func (s *Struct) Dig(p string) (Object, bool) {
+	v, ok := s.Value[p]
+	return NewObject(append(s.Path, p), v), ok
 }

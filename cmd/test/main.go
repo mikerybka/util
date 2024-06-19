@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/http"
+
+	"github.com/mikerybka/util"
 )
 
 func IntToID(v int64) string {
@@ -35,10 +37,16 @@ func IntToID(v int64) string {
 	return res
 }
 
+type Test struct {
+	T string
+	V int
+}
+
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		s := r.Header.Get("Accept")
-		w.Write([]byte(s))
+	v := util.StructToMap(&Test{
+		T: "test",
+		V: 123,
 	})
-	http.ListenAndServe(":8000", nil)
+	b, _ := json.Marshal(v)
+	fmt.Println(string(b))
 }

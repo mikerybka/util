@@ -29,7 +29,12 @@ func ServeObject(path []string, v Object, w http.ResponseWriter, r *http.Request
 		first := p[0]
 		rest := p[1:]
 		r.URL.Path = JoinPath(rest)
-		ServeObject(append(path, first), v.Dig(first), w, r)
+		next, ok := v.Dig(first)
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		ServeObject(append(path, first), next, w, r)
 		return
 	}
 

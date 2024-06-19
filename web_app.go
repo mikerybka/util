@@ -167,27 +167,27 @@ func (app *WebApp[T]) PostOrg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *WebApp[T]) GetPath(w http.ResponseWriter, r *http.Request) {
-	object := Object[T]{}
-	path := r.URL.Path
-	if app.Files.Dig("schemas").IsDir(path) {
-		object.IsDir = true
-		entries, err := app.Files.Dig("schemas").ReadDir(path)
-		if err != nil {
-			panic(err)
-		}
-		object.Entries = entries
-	} else if app.Files.Dig("schemas").IsFile(path) {
-		object.IsFile = true
-		b, err := app.Files.Dig("schemas").ReadFile(path)
-		if err != nil {
-			panic(err)
-		}
-		err = json.Unmarshal(b, object.Data)
-		if err != nil {
-			panic(err)
-		}
-	}
-	object.ServeHTTP(w, r)
+	// object := Object[T]{}
+	// path := r.URL.Path
+	// if app.Files.Dig("schemas").IsDir(path) {
+	// 	object.IsDir = true
+	// 	entries, err := app.Files.Dig("schemas").ReadDir(path)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	object.Entries = entries
+	// } else if app.Files.Dig("schemas").IsFile(path) {
+	// 	object.IsFile = true
+	// 	b, err := app.Files.Dig("schemas").ReadFile(path)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	err = json.Unmarshal(b, object.Data)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+	// object.ServeHTTP(w, r)
 }
 
 func (app *WebApp[T]) PutPath(w http.ResponseWriter, r *http.Request) {
