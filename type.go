@@ -1,13 +1,12 @@
 package util
 
 import (
+	"fmt"
 	"io"
+	"strings"
 )
 
 type Type struct {
-	Name       string
-	PluralName string
-
 	IsScalar    bool
 	Kind        string
 	IsPointer   bool
@@ -20,22 +19,37 @@ type Type struct {
 	DefaultJSON string
 }
 
-func (t *Type) WriteGoAPI(w io.Writer) error {
-	panic("not implemented")
+func (t *Type) GoString(indent int) string {
+	if t.IsScalar {
+		return t.Kind
+	}
+	if t.IsPointer {
+		return "*" + t.ElemType
+	}
+	if t.IsArray {
+		return "[]" + t.ElemType
+	}
+	if t.IsMap {
+		return "map[string]" + t.ElemType
+	}
+	if t.IsStruct {
+		s := strings.Builder{}
+		s.WriteString("struct {\n")
+		for _, f := range t.Fields {
+			for i := 0; i < indent+1; i++ {
+				s.WriteString("\t")
+			}
+			s.WriteString(f.Name)
+			s.WriteString(" ")
+			s.WriteString(f.Type.GoString(indent + 1))
+			s.WriteString("\n")
+		}
+		s.WriteString("}")
+		return s.String()
+	}
+	panic("unknown type")
 }
 
-func (t *Type) WriteNextJSPage(w io.Writer) error {
-	el := &ReactElement{}
-	if t.IsScalar {
-		el.Type = t.Kind
-	} else if t.IsPointer {
-		el.Type = "Pointer"
-	} else if t.IsArray {
-		el.Type = "Array"
-	} else if t.IsMap {
-		el.Type = "Map"
-	} else if t.IsStruct {
-		el.Type = "Struct"
-	}
-	return el.WriteNextJSPage(w)
+func (t *Type) WriteGoFile(w io.Writer, pkg, name string) (int, error) {
+	return fmt.Fprintf(w, "package %s\n\ntype %s %s\n", pkg, name, t.GoString(0))
 }

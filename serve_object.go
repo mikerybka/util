@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ServeAny(path []string, v Object, w http.ResponseWriter, r *http.Request) {
+func ServeObject(path []string, v Object, w http.ResponseWriter, r *http.Request) {
 	// Parse the request path.
 	p := ParsePath(r.URL.Path)
 
@@ -29,7 +29,7 @@ func ServeAny(path []string, v Object, w http.ResponseWriter, r *http.Request) {
 		first := p[0]
 		rest := p[1:]
 		r.URL.Path = JoinPath(rest)
-		ServeAny(append(path, first), v.Dig(first), w, r)
+		ServeObject(append(path, first), v.Dig(first), w, r)
 		return
 	}
 

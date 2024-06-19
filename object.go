@@ -9,7 +9,7 @@ type Object interface {
 	JSON() string
 	Type() string
 	Ptr() any
-	Dig(s string) Object
+	Dig(s string) (Object, bool)
 }
 
 // //go:embed web_templates/object.html

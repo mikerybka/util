@@ -2,9 +2,8 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
-	"html"
-	"net/http"
+	"path/filepath"
+	"strconv"
 )
 
 type Array[T any] struct {
@@ -24,28 +23,18 @@ func (a *Array[T]) JSON() string {
 	return string(b)
 }
 
-func (a *Array[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		if Accept(r, "text/html") {
-			fmt.Fprintf(w, "<div class='array' id='%s' data-value='%s' />", a.ID(), html.EscapeString(a.JSON()))
-			return
-		}
+func (a *Array[T]) Type() string {
+	return "array"
+}
 
-		json.NewEncoder(w).Encode(a.Value)
-		return
+func (a *Array[T]) Ptr() any {
+	return a.Value
+}
+
+func (a *Array[T]) Dig(s string) (Object, bool) {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return nil, false
 	}
-
-	if r.Method == "PUT" {
-		err := json.NewDecoder(r.Body).Decode(a.Value)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(a.Value)
-		return
-	}
-
-	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	return
+	return NewObject(filepath.Join(a.ID(), s), a.Value[i])
 }

@@ -2,9 +2,6 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
-	"html"
-	"net/http"
 )
 
 type String struct {
@@ -24,28 +21,14 @@ func (s *String) JSON() string {
 	return string(b)
 }
 
-func (s *String) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		if Accept(r, "text/html") {
-			fmt.Fprintf(w, "<div class='string' id='%s' data-value='%s' />", s.ID(), html.EscapeString(s.JSON()))
-			return
-		}
+func (s *String) Type() string {
+	return "string"
+}
 
-		json.NewEncoder(w).Encode(s.Value)
-		return
-	}
+func (s *String) Ptr() any {
+	return &s.Value
+}
 
-	if r.Method == "PUT" {
-		err := json.NewDecoder(r.Body).Decode(s.Value)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(s.Value)
-		return
-	}
-
-	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	return
+func (s *String) Dig(p string) (Object, bool) {
+	return nil, false
 }
