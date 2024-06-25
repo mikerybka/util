@@ -1,6 +1,9 @@
 package util
 
-import "io"
+import (
+	"io"
+	"net/http"
+)
 
 type HTMLDocument struct {
 	Head *HTMLHead
@@ -27,4 +30,8 @@ func (d *HTMLDocument) Write(w io.Writer) (int64, error) {
 	n, err := d.XML().Write(w)
 	written += n
 	return written, err
+}
+
+func (d *HTMLDocument) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	d.Write(w)
 }
