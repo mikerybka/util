@@ -53,3 +53,7 @@ func (t *Type) GoString(indent int) string {
 func (t *Type) WriteGoFile(w io.Writer, pkg, name string) (int, error) {
 	return fmt.Fprintf(w, "package %s\n\ntype %s %s\n", pkg, name, t.GoString(0))
 }
+
+func (t *Type) GoFile(pkg, typ string) string {
+	return fmt.Sprintf("package %s\n\ntype %s %s\n", pkg, typ, t.GoString(0))
+}

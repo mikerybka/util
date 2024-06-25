@@ -13,10 +13,9 @@ func main() {
 			Path: path,
 			Value: map[string]any{
 				"schema1": &util.Schema{
-					Fields: []util.SchemaField{
+					Fields: []util.Field{
 						{
 							Name: "yo",
-							Type: "string",
 						},
 					},
 				},
