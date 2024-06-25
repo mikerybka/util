@@ -5,8 +5,8 @@ func XMLString(s string) XML {
 		El: "string",
 		Attrs: []Pair[string, string]{
 			{
-				Key:   "value",
-				Value: s,
+				K: "value",
+				V: s,
 			},
 		},
 	}

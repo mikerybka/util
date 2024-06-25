@@ -26,12 +26,12 @@ func (h *HTMLHead) XML() *XML {
 			El: "meta",
 			Attrs: []Pair[string, string]{
 				{
-					Key:   "name",
-					Value: "viewport",
+					K: "name",
+					V: "viewport",
 				},
 				{
-					Key:   "content",
-					Value: "width=device-width, initial-scale=1.0",
+					K: "content",
+					V: "width=device-width, initial-scale=1.0",
 				},
 			},
 		},
@@ -45,12 +45,12 @@ func (h *HTMLHead) XML() *XML {
 			El: "meta",
 			Attrs: []Pair[string, string]{
 				{
-					Key:   "name",
-					Value: "description",
+					K: "name",
+					V: "description",
 				},
 				{
-					Key:   "content",
-					Value: h.Desc,
+					K: "content",
+					V: h.Desc,
 				},
 			},
 		},
@@ -58,12 +58,12 @@ func (h *HTMLHead) XML() *XML {
 			El: "meta",
 			Attrs: []Pair[string, string]{
 				{
-					Key:   "name",
-					Value: "author",
+					K: "name",
+					V: "author",
 				},
 				{
-					Key:   "content",
-					Value: h.Author,
+					K: "content",
+					V: h.Author,
 				},
 			},
 		},
@@ -71,16 +71,16 @@ func (h *HTMLHead) XML() *XML {
 			El: "link",
 			Attrs: []Pair[string, string]{
 				{
-					Key:   "rel",
-					Value: "stylesheet",
+					K: "rel",
+					V: "stylesheet",
 				},
 				{
-					Key:   "href",
-					Value: h.CSS,
+					K: "href",
+					V: h.CSS,
 				},
 				{
-					Key:   "type",
-					Value: "text/css",
+					K: "type",
+					V: "text/css",
 				},
 			},
 		},

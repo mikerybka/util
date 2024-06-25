@@ -22,8 +22,8 @@ func (xml *XML) String() string {
 
 func (xml *XML) Attr(key string) string {
 	for _, attr := range xml.Attrs {
-		if attr.Key == key {
-			return attr.Value
+		if attr.K == key {
+			return attr.V
 		}
 	}
 	return ""
@@ -43,9 +43,9 @@ func (xml *XML) Write(w io.Writer) (n int64, err error) {
 	buf.WriteString(xml.El)
 	for _, attr := range xml.Attrs {
 		buf.WriteString(" ")
-		buf.WriteString(attr.Key)
+		buf.WriteString(attr.K)
 		buf.WriteString("=\"")
-		buf.WriteString(attr.Value)
+		buf.WriteString(attr.V)
 		buf.WriteString("\"")
 	}
 	buf.WriteString(">")
