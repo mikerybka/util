@@ -31,5 +31,8 @@ func (m *Map) Ptr() any {
 
 func (m *Map) Dig(s string) (Object, bool) {
 	v, ok := m.Value[s]
-	return NewObject(append(m.Path, s), v), ok
+	if !ok {
+		return nil, false
+	}
+	return NewObject(append(m.Path, s), v), true
 }

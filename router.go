@@ -1,66 +1,171 @@
 package util
 
 import (
-	"context"
 	"net/http"
-	"regexp"
+	"slices"
 	"strings"
 )
 
-// Router struct
 type Router struct {
-	routes []*Route
+	Root func(w http.ResponseWriter, r *http.Request)
+	Next func(first string, w http.ResponseWriter, r *http.Request)
 }
 
-// NewRouter creates a new Router instance
-func NewRouter() *Router {
-	return &Router{}
+func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	first, rest, isRoot := PopPath(r.URL.Path)
+	if isRoot {
+		router.Root(w, r)
+		return
+	}
+	r.URL.Path = rest
+	router.Next(first, w, r)
 }
 
-// AddRoute adds a new route to the router
-func (r *Router) AddRoute(path string, handler http.HandlerFunc) {
-	// Convert path with variables to regex
-	regexPattern := "^" + path
-	regexPattern = strings.Replace(regexPattern, "[", "(?P<", -1)
-	regexPattern = strings.Replace(regexPattern, "]", ">[^/]+)", -1)
-	regexPattern += "$"
-	regex := regexp.MustCompile(regexPattern)
-
-	r.routes = append(r.routes, &Route{
-		Pattern: regex,
-		Handler: handler,
-	})
+// FancyRouter handles HTTP requests by matching each request to a handler
+// according to Next.js routing conventions.
+type FancyRouter struct {
+	// Routes. Each key should start with '/'.
+	// To handle the root request, use the key "/".
+	// To define a path variable, use square brackets like "/items/[itemID]".
+	Routes   map[string]http.Handler
+	NotFound http.Handler
 }
 
-// ServeHTTP implements the http.Handler interface
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	for _, route := range r.routes {
-		if match := route.Pattern.FindStringSubmatch(req.URL.Path); match != nil {
-			// Extract the path variables
-			params := make(map[string]string)
-			for i, name := range route.Pattern.SubexpNames() {
-				if i > 0 && name != "" {
-					params[name] = match[i]
-				}
+func (r *FancyRouter) SortedRoutes() []string {
+	routes := []string{}
+	for k := range r.Routes {
+		routes = append(routes, k)
+	}
+	slices.Sort(routes)
+	return routes
+}
+
+// func (r *Router) FindRoute(path string) (string, bool) {
+// 	for _, route := range r.SortedRoutes() {
+// 		if route == path {
+// 			return route, true
+// 		}
+
+// 	}
+// 	// Check for an exact match.
+// 	_, ok := r.Routes[path]
+// 	if ok {
+// 		return path, true
+// 	}
+
+// 	// Break the path into parts
+// 	pathParts := ParsePath(path)
+
+// 	// Keep track of the possible paths
+// 	possiblePaths := maps.Clone(r.Routes)
+
+// 	// Loop through each part of the path.
+// 	for i, p := range pathParts {
+
+// 		// If there is an exact match
+// 		exact := true
+// 		for k := range possiblePaths {
+// 			path := ParsePath(k)
+// 			isVar := strings.HasPrefix(path[i], "[") && strings.HasSuffix(path[i], "]")
+// 			if isVar && exact == true {
+// 				exact = false
+// 				continue
+// 			}
+// 			if isVar {
+// 				delete(possiblePaths, k)
+// 			}
+// 			if path[i] != p && !isVar {
+// 				delete(possiblePaths, k)
+// 			}
+// 		}
+// 	}
+
+// 	if len(possiblePaths) == 0 {
+// 		return "", false
+// 	}
+
+// 	for p := range possiblePaths {
+// 		if p == "" {
+
+// 		}
+// 	}
+
+// 	if len(possiblePaths) > 1 {
+// 		// TODO: handle multiple matches
+// 		panic("wip")
+// 	}
+
+// 	return possiblePaths[0]
+// }
+
+func (r *FancyRouter) match(path string) (http.Handler, map[string]string) {
+	pathVars := map[string]string{}
+
+	// Check for exact match.
+	h, ok := r.Routes[path]
+	if ok {
+		return h, pathVars
+	}
+
+	matches := []string{}
+	for k := range r.Routes {
+		isMatch, vars := checkMatch(k, path)
+		if isMatch {
+			matches = append(matches, k)
+			for k, v := range vars {
+				pathVars[k] = v
 			}
-			// Attach params to the request context
-			ctx := req.Context()
-			ctx = context.WithValue(ctx, "params", params)
-			req = req.WithContext(ctx)
-
-			// Call the handler
-			route.Handler(w, req)
-			return
 		}
 	}
-	http.NotFound(w, req)
+
+	if len(matches) == 0 {
+		return r.NotFound, pathVars
+	}
+
+	if len(matches) == 1 {
+		return r.Routes[matches[0]], pathVars
+	}
+
+	panic("")
 }
 
-// GetParam retrieves the path variable from the request context
-func GetParam(r *http.Request, name string) string {
-	params, ok := r.Context().Value("params").(map[string]string)
-	if !ok {
-		return ""
+func selectMatch(matches []string) string {
+	best := matches[0]
+	numParts := len(ParsePath(best))
+	for i := 0; i < numParts; {
 	}
-	return params[name]
+	return ""
+}
+
+func checkMatch(route, path string) (bool, map[string]string) {
+	// Parse both the route and the path given into an array of strings so
+	// that it is easier to work with.
+	routeParts := ParsePath(route)
+	pathParts := ParsePath(path)
+
+	vars := map[string]string{}
+
+	// If the number of parts in the route don't match the number of parts in
+	// the path, we know it can't be a match.
+	if len(routeParts) != len(pathParts) {
+		return false, nil
+	}
+
+	// Loop through each part.
+	for i := 0; i < len(routeParts); i++ {
+		if isPathVar(routeParts[i]) {
+			varName := strings.TrimSuffix(strings.TrimPrefix(path, "["), "]")
+			vars[varName] = pathParts[i]
+			continue
+		}
+		if pathParts[i] != routeParts[i] {
+			return false, nil
+		}
+	}
+
+	return true, vars
+}
+
+func isPathVar(s string) bool {
+	return strings.HasPrefix(s, "[") && strings.HasPrefix(s, "]")
 }

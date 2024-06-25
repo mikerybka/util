@@ -2,12 +2,13 @@ package util
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 )
 
 type Array struct {
 	Path  []string
-	Value []any
+	Value any
 }
 
 func (a *Array) ID() string {
@@ -35,5 +36,10 @@ func (a *Array) Dig(s string) (Object, bool) {
 	if err != nil {
 		return nil, false
 	}
-	return NewObject(append(a.Path, s), a.Value[i]), true
+	path := append(a.Path, s)
+	v := reflect.ValueOf(a.Value)
+	if i >= v.Len() || i < 0 {
+		return nil, false
+	}
+	return NewObject(path, v.Index(i).Interface()), true
 }

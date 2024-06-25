@@ -7,15 +7,23 @@ import (
 )
 
 func main() {
-	app := &util.Cafe[*util.Schema]{
-		Data: map[string]*util.Schema{
-			"tuv": {
-				ID:     "tuv",
-				Name:   "TUV",
-				Fields: []util.Field{},
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		path := []string{}
+		obj := &util.Map{
+			Path: path,
+			Value: map[string]any{
+				"schema1": &util.Schema{
+					Fields: []util.SchemaField{
+						{
+							Name: "yo",
+							Type: "string",
+						},
+					},
+				},
 			},
-		},
-	}
-	err := http.ListenAndServe(":8000", app)
+		}
+		util.ServeObject(path, obj, w, r)
+	})
+	err := http.ListenAndServe(":8000", nil)
 	panic(err)
 }

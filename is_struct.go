@@ -9,6 +9,9 @@ func IsStruct(v any) bool {
 	switch t.Kind() {
 	case reflect.Struct:
 		return true
+	case reflect.Pointer:
+		t = t.Elem()
+		return t.Kind() == reflect.Struct
 	default:
 		return false
 	}

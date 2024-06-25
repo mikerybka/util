@@ -3,28 +3,40 @@ package util
 import "fmt"
 
 func NewObject(path []string, v any) Object {
-	if IsInt(v) {
+	if v == nil {
+		return &Nil{
+			Path: path,
+		}
+	}
+
+	i, ok := v.(int64)
+	if ok {
 		return &Int{
 			Path:  path,
-			Value: v.(int64),
+			Value: i,
 		}
 	}
-	if IsString(v) {
+
+	s, ok := v.(string)
+	if ok {
 		return &String{
 			Path:  path,
-			Value: v.(string),
+			Value: s,
 		}
 	}
-	if IsBool(v) {
+
+	b, ok := v.(bool)
+	if ok {
 		return &Bool{
 			Path:  path,
-			Value: v.(bool),
+			Value: b,
 		}
 	}
+
 	if IsArray(v) {
 		return &Array{
 			Path:  path,
-			Value: v.([]any),
+			Value: v,
 		}
 	}
 	if IsMap(v) {
