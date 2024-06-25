@@ -1,7 +1,7 @@
 package util
 
-func XMLString(s string) XML {
-	return XML{
+func XMLString(s string) *XML {
+	return &XML{
 		El: "string",
 		Attrs: []Pair[string, string]{
 			{

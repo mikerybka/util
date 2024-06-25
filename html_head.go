@@ -21,7 +21,7 @@ func (h *HTMLHead) Write(w io.Writer) (int64, error) {
 }
 
 func (h *HTMLHead) XML() *XML {
-	children := []XML{
+	children := []*XML{
 		{
 			El: "meta",
 			Attrs: []Pair[string, string]{
@@ -37,7 +37,7 @@ func (h *HTMLHead) XML() *XML {
 		},
 		{
 			El: "title",
-			Children: []XML{
+			Children: []*XML{
 				XMLString(h.Title),
 			},
 		},

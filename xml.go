@@ -8,7 +8,7 @@ import (
 type XML struct {
 	El       string
 	Attrs    []Pair[string, string]
-	Children []XML
+	Children []*XML
 }
 
 func (xml *XML) String() string {
