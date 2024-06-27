@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -26,6 +27,7 @@ func (a *App) Handler(r *http.Request) http.Handler {
 
 func (a *App) Config() *AppConfig {
 	path := filepath.Join(a.Dir, "config.json")
+	fmt.Println("PATH:", path)
 	return ReadJSONFile[*AppConfig](path)
 }
 
