@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -32,35 +31,45 @@ type Server struct {
 	CertDir      string
 }
 
-func (s *Server) SystemdService() string {
-	f := `[Unit]
-	Description=Server
-	After=network.target
-	
-	[Service]
-	Type=simple
-	Environment="TWILIO_ACCOUNT_SID=%s"
-	Environment="TWILIO_AUTH_TOKEN=%s"
-	Environment="TWILIO_PHONE_NUMBER=%s"
-	Environment="DATA_DIR=%s"
-	Environment="ADMIN_PHONE=%s"
-	Environment="ADMIN_EMAIL=%s"
-	Environment="CERT_DIR=%s"
-	ExecStart=/usr/local/bin/server
-	Restart=on-failure
-	
-	[Install]
-	WantedBy=multi-user.target
-`
-	return fmt.Sprintf(f,
-		s.TwilioClient.AccountSID,
-		s.TwilioClient.AuthToken,
-		s.TwilioClient.PhoneNumber,
-		s.DataDir,
-		s.AdminPhone,
-		s.AdminEmail,
-		s.CertDir,
-	)
+func (s *Server) SystemdService() *SystemdService {
+	return &SystemdService{
+		Name:  "server",
+		Desc:  "server",
+		After: "network.target",
+		Type:  "simple",
+		Env: []Pair[string, string]{
+			{
+				K: "TWILIO_ACCOUNT_SID",
+				V: s.TwilioClient.AccountSID,
+			},
+			{
+				K: "TWILIO_AUTH_TOKEN",
+				V: s.TwilioClient.AuthToken,
+			},
+			{
+				K: "TWILIO_PHONE_NUMBER",
+				V: s.TwilioClient.PhoneNumber,
+			},
+			{
+				K: "DATA_DIR",
+				V: s.DataDir,
+			},
+			{
+				K: "ADMIN_PHONE",
+				V: s.AdminPhone,
+			},
+			{
+				K: "ADMIN_EMAIL",
+				V: s.AdminEmail,
+			},
+			{
+				K: "CERT_DIR",
+				V: s.CertDir,
+			},
+		},
+		AutoRestart: "on-failure",
+		WantedBy:    "multi-user.target",
+	}
 }
 
 func (s *Server) HostPolicy(ctx context.Context, host string) error {
