@@ -28,8 +28,17 @@ func NewTable[T any]() *Table[T] {
 }
 
 type Table[T any] struct {
-	Rows    map[string]T
-	Indexes map[string]Index
+	Rows        map[string]T
+	Indexes     map[string]Index
+	Constraints []TableConstraint
+}
+
+func (t *Table[T]) AddUniqConstraint(col string) error {
+	t.Constraints = append(t.Constraints, TableConstraint{
+		Column:     col,
+		Uniqueness: true,
+	})
+	return nil
 }
 
 func (t *Table[T]) AddIndex(fieldID string) error {
@@ -61,32 +70,38 @@ func (t *Table[T]) Find(id string) (T, bool) {
 	return v, ok
 }
 
-func (t *Table[T]) IDs() Set {
-	s := Set{}
+func (t *Table[T]) IDs() Set[string] {
+	s := Set[string]{}
 	for k := range t.Rows {
 		s.Add(k)
 	}
 	return s
 }
 
-func (t *Table[T]) Select(match ...Pair[string, string]) map[string]T {
-	ids := t.IDs()
-	for _, cond := range match {
-		index := t.Indexes[cond.K]
-		set := index.Get(cond.V)
-		ids = ids.Intersection(set)
+func (t *Table[T]) FindBy(col string, value any) map[string]T {
+	res := map[string]T{}
+	for id, v := range t.Rows {
+		field := reflect.ValueOf(v).FieldByName(col).Interface()
+		if reflect.DeepEqual(field, value) {
+			res[id] = v
+		}
 	}
-
-	results := map[string]T{}
-
-	for _, id := range ids.List() {
-		results[id] = t.Rows[id]
-	}
-
-	return results
+	return res
 }
 
-func (t *Table[T]) Insert(v T) {
+func (t *Table[T]) Insert(v T) error {
+	// Make sure the row meets any constraints.
+	for _, c := range t.Constraints {
+		// Handle unique
+		if c.Uniqueness {
+			field := reflect.ValueOf(v).FieldByName(c.Column).Interface()
+			res := t.FindBy(c.Column, field)
+			if len(res) > 0 {
+				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Column, field)
+			}
+		}
+	}
+
 	// Generate a new ID.
 	id := RandomID()
 
@@ -98,9 +113,23 @@ func (t *Table[T]) Insert(v T) {
 		value := reflect.ValueOf(v).FieldByName(fieldID).Interface().(string)
 		index.Add(value, id)
 	}
+
+	return nil
 }
 
-func (t *Table[T]) Update(id string, v T) {
+func (t *Table[T]) Update(id string, v T) error {
+	// Make sure the row meets any constraints.
+	for _, c := range t.Constraints {
+		// Handle unique
+		if c.Uniqueness {
+			field := reflect.ValueOf(v).FieldByName(c.Column).Interface()
+			res := t.FindBy(c.Column, field)
+			if len(res) > 0 {
+				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Column, field)
+			}
+		}
+	}
+
 	old := t.Rows[id]
 
 	// Update the indexes.
@@ -115,6 +144,8 @@ func (t *Table[T]) Update(id string, v T) {
 
 	// Update the data.
 	t.Rows[id] = v
+
+	return nil
 }
 
 func (t *Table[T]) Delete(id string) {

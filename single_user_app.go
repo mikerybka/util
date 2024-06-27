@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-type SingleUserApp[T http.Handler] struct {
+type SingleUserApp struct {
 	Twilio    *TwilioClient
 	UserPhone string
 	Files     FileSystem
+	Handler   http.Handler
 }
 
-func (app *SingleUserApp[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	dataLocation := "app/data.json"
+func (app *SingleUserApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/auth") {
 		http.StripPrefix("/auth", app.AuthHandler()).ServeHTTP(w, r)
 		return
@@ -30,25 +30,10 @@ func (app *SingleUserApp[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, _ := app.Files.ReadFile(dataLocation)
-	var data T
-	json.Unmarshal(b, data)
-
-	data.ServeHTTP(w, r)
-
-	if IsMutation(r) {
-		b, err := json.MarshalIndent(data, "", "\t")
-		if err != nil {
-			panic(err)
-		}
-		err = app.Files.WriteFile(dataLocation, b)
-		if err != nil {
-			panic(err)
-		}
-	}
+	app.Handler.ServeHTTP(w, r)
 }
 
-func (a *SingleUserApp[T]) AuthHandler() *SingleUserAuthHandler {
+func (a *SingleUserApp) AuthHandler() *SingleUserAuthHandler {
 	return &SingleUserAuthHandler{
 		UserPhone: a.UserPhone,
 		AuthFiles: a.Files.Dig("auth"),
@@ -56,11 +41,11 @@ func (a *SingleUserApp[T]) AuthHandler() *SingleUserAuthHandler {
 	}
 }
 
-func (a *SingleUserApp[T]) AuthFiles() FileSystem {
+func (a *SingleUserApp) AuthFiles() FileSystem {
 	return a.Files.Dig("auth")
 }
 
-func (a *SingleUserApp[T]) Authorized(r *http.Request) (bool, error) {
+func (a *SingleUserApp) Authorized(r *http.Request) (bool, error) {
 	token := r.Header.Get("Token")
 	_, err := a.GetSession(token)
 	if errors.Is(err, os.ErrNotExist) {
@@ -72,7 +57,7 @@ func (a *SingleUserApp[T]) Authorized(r *http.Request) (bool, error) {
 	return true, nil
 }
 
-func (a *SingleUserApp[T]) GetSession(token string) (*Session, error) {
+func (a *SingleUserApp) GetSession(token string) (*Session, error) {
 	b, err := a.AuthFiles().ReadFile("/sessions/" + token)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, err

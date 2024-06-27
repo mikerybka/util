@@ -10,6 +10,7 @@ func main() {
 	}
 	server := util.NewServer(util.EnvVar("DATA_DIR", "data"), util.RequireEnvVar("ADMIN_PHONE"), twilioClient)
 	server.AddApp("schema.cafe", &util.SchemaCafe{})
+	server.AddApp("mikerybka.com", &util.LinkTree{})
 	err := server.Start(util.RequireEnvVar("ADMIN_EMAIL"), util.RequireEnvVar("CERT_DIR"))
 	panic(err)
 }
