@@ -30,7 +30,11 @@ func (a *App) Config() *AppConfig {
 }
 
 func (a *App) Kind() string {
-	return a.Config().Kind
+	c := a.Config()
+	if c == nil {
+		return ""
+	}
+	return c.Kind
 }
 
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
