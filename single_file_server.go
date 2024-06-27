@@ -6,11 +6,9 @@ import (
 )
 
 func NewSingleFileServer[T http.Handler](path string) *SingleFileServer[T] {
-	var v T
-	ReadJSONFile(path, v)
 	return &SingleFileServer[T]{
 		Path: path,
-		V:    v,
+		V:    ReadJSONFile[T](path),
 	}
 }
 

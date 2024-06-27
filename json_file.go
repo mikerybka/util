@@ -10,8 +10,7 @@ type JSONFile[T http.Handler] struct {
 }
 
 func (f *JSONFile[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var v T
-	ReadJSONFile(f.Path, v)
+	v := ReadJSONFile[T](f.Path)
 	v.ServeHTTP(w, r)
 	if IsMutation(r) {
 		b, err := json.Marshal(v)

@@ -3,7 +3,15 @@ package util
 import (
 	"bytes"
 	"io"
+
+	"golang.org/x/net/html"
 )
+
+func NewXML(n *html.Node) *XML {
+	return &XML{
+		El: n.Data,
+	}
+}
 
 type XML struct {
 	El       string

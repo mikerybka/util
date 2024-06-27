@@ -1,6 +1,9 @@
 package util
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type LinkTree struct {
 	Head  *HTMLHead
@@ -8,8 +11,5 @@ type LinkTree struct {
 }
 
 func (tree *LinkTree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	doc := &HTMLDocument{
-		Head: tree.Head,
-	}
-	doc.ServeHTTP(w, r)
+	json.NewEncoder(w).Encode(tree)
 }

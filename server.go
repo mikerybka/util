@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -16,7 +15,6 @@ import (
 func NewServer(dataDir string, adminPhone string, twilioClient *TwilioClient) *Server {
 	return &Server{
 		DataDir:      dataDir,
-		Hosts:        make(map[string]http.Handler),
 		TwilioClient: twilioClient,
 		AdminPhone:   adminPhone,
 	}
@@ -24,24 +22,15 @@ func NewServer(dataDir string, adminPhone string, twilioClient *TwilioClient) *S
 
 // Server hosts multiple apps.
 // App data is read from "{datadir}/{host}/data.json".
+// Config is "{datadir}/{host}/config.json" defined by AppConfig.
 type Server struct {
 	DataDir      string
-	Hosts        map[string]http.Handler
 	TwilioClient *TwilioClient
 	AdminPhone   string
 }
 
-func (s *Server) AddApp(host string, handler http.Handler) {
-	s.Hosts[host] = handler
-}
-
 func (s *Server) HostPolicy(ctx context.Context, host string) error {
-	host = strings.TrimPrefix(host, "www.")
-	_, ok := s.Hosts[host]
-	if ok {
-		return nil
-	}
-	return fmt.Errorf("host not allowed: %s", host)
+	return nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -67,30 +56,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the handler for the host.
-	h, ok := s.Hosts[strings.TrimPrefix(r.Host, "www.")]
-	if !ok {
-		http.NotFound(w, r)
-		return
+	app := &App{
+		Dir: filepath.Join(s.DataDir, r.Host),
 	}
-
-	// Try to read from the data file
-	datapath := filepath.Join(s.DataDir, r.Host, "data.json")
-	ReadJSONFile(datapath, h)
-
-	// Turn off CORS.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	// Server the request.
-	h.ServeHTTP(w, r)
-
-	// Write changes if necessary.
-	if IsMutation(r) {
-		err := WriteJSONFile(datapath, h)
-		if err != nil {
-			panic(err)
-		}
-	}
+	app.ServeHTTP(w, r)
 }
 
 func (s *Server) Start(email, certDir string) error {

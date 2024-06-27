@@ -1,8 +1,8 @@
 package util
 
-type Index map[string]Set
+type Index map[string]Set[string]
 
-func (i Index) Get(key string) Set {
+func (i Index) Get(key string) Set[string] {
 	return i[key]
 }
 
