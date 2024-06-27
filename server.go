@@ -27,6 +27,8 @@ type Server struct {
 	DataDir      string
 	TwilioClient *TwilioClient
 	AdminPhone   string
+	AdminEmail   string
+	CertDir      string
 }
 
 func (s *Server) HostPolicy(ctx context.Context, host string) error {
@@ -62,7 +64,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.ServeHTTP(w, r)
 }
 
-func (s *Server) Start(email, certDir string) error {
+func (s *Server) Start() error {
 	// Create a channel to receive errors from the HTTP servers.
 	errChan := make(chan error)
 
@@ -70,9 +72,9 @@ func (s *Server) Start(email, certDir string) error {
 	// See https://godoc.org/golang.org/x/crypto/acme/autocert#Manager for details.
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(certDir),
+		Cache:      autocert.DirCache(s.CertDir),
 		HostPolicy: s.HostPolicy,
-		Email:      email,
+		Email:      s.AdminEmail,
 	}
 
 	// Start the HTTP server.
