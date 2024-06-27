@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -29,6 +30,37 @@ type Server struct {
 	AdminPhone   string
 	AdminEmail   string
 	CertDir      string
+}
+
+func (s *Server) SystemdService() string {
+	f := `[Unit]
+	Description=Server
+	After=network.target
+	
+	[Service]
+	Type=simple
+	Environment="TWILIO_ACCOUNT_SID=%s"
+	Environment="TWILIO_AUTH_TOKEN=%s"
+	Environment="TWILIO_PHONE_NUMBER=%s"
+	Environment="DATA_DIR=%s"
+	Environment="ADMIN_PHONE=%s"
+	Environment="ADMIN_EMAIL=%s"
+	Environment="CERT_DIR=%s"
+	ExecStart=/usr/local/bin/server
+	Restart=on-failure
+	
+	[Install]
+	WantedBy=multi-user.target
+`
+	return fmt.Sprintf(f,
+		s.TwilioClient.AccountSID,
+		s.TwilioClient.AuthToken,
+		s.TwilioClient.PhoneNumber,
+		s.DataDir,
+		s.AdminPhone,
+		s.AdminEmail,
+		s.CertDir,
+	)
 }
 
 func (s *Server) HostPolicy(ctx context.Context, host string) error {
