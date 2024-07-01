@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 )
 
@@ -32,6 +33,8 @@ type Table[T any] struct {
 	Indexes     map[string]Index
 	Constraints []TableConstraint
 }
+
+func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 func (t *Table[T]) AddUniqConstraint(col string) error {
 	t.Constraints = append(t.Constraints, TableConstraint{

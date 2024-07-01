@@ -12,7 +12,7 @@ type HTMLHead struct {
 	CSS    string
 }
 
-func (h *HTMLHead) ServeHTTP(w http.ResponseWriter, r http.Request) {
+func (h *HTMLHead) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Write(w)
 }
 

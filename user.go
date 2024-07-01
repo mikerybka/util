@@ -1,6 +1,8 @@
 package util
 
-import "strings"
+import (
+	"net/http"
+)
 
 type User struct {
 	// Public ID
@@ -11,12 +13,15 @@ type User struct {
 	Email Email
 
 	// Personal
-	FullName string
+	FirstName string
+	LastName  string
+
+	// Data
+	Schemas Table[*Schema]
 }
 
-func (u *User) FirstName() string {
-	if u.FullName == "" {
-		return ""
+func (u *User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Host == "schema.cafe" {
+		u.Schemas.ServeHTTP(w, r)
 	}
-	return strings.Split(u.FullName, " ")[0]
 }

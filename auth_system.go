@@ -55,7 +55,7 @@ func (a *AuthSystem) SendLoginCode(phone string) (userID string, err error) {
 	users := a.Users.FindBy("Phone", phone)
 	userID, user, found := OnlyOne(users)
 	if !found {
-		fmt.Errorf("user not registered")
+		return "", fmt.Errorf("user not registered")
 	}
 
 	// Create a login code.
