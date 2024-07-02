@@ -53,7 +53,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
 			// Respond with a 500 Internal Server Error
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			// Message me
+			// Message the admin
 			s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v\n%s", r.URL.String(), err, debug.Stack()))
 		}
 	}()
