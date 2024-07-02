@@ -34,7 +34,9 @@ type Table[T any] struct {
 	Constraints []TableConstraint
 }
 
-func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request)
+func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "wip")
+}
 
 func (t *Table[T]) AddUniqConstraint(col string) error {
 	t.Constraints = append(t.Constraints, TableConstraint{
