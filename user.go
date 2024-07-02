@@ -42,7 +42,7 @@ func (u *User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Serve each app in the system
 	switch host {
-	case "schema.cafe":
+	case "schema.cafe", "www.schema.cafe":
 		u.SchemaCafe(w, r)
 	default:
 		http.NotFound(w, r)
