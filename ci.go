@@ -10,6 +10,8 @@ type CI struct {
 	SourceDir     string
 	OutFile       string
 	ServiceName   string
+	TwilioClient  *TwilioClient
+	AdminPhone    string
 }
 
 func (ci *CI) Start() {
@@ -20,6 +22,7 @@ func (ci *CI) Start() {
 		}
 		if ok {
 			fmt.Println(time.Now(), "DEPLOY")
+			ci.TwilioClient.SendSMS(ci.AdminPhone, "New deploy!")
 		}
 		time.Sleep(time.Minute * time.Duration(ci.PeriodMinutes))
 	}
