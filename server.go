@@ -46,51 +46,6 @@ type Server struct {
 	LoginCodeMsgFmt string
 }
 
-func (s *Server) SystemdService() *SystemdService {
-	return &SystemdService{
-		Name:  "server",
-		Desc:  "server",
-		After: "network.target",
-		Type:  "simple",
-		Env: []Pair[string, string]{
-			{
-				K: "TWILIO_ACCOUNT_SID",
-				V: s.TwilioClient.AccountSID,
-			},
-			{
-				K: "TWILIO_AUTH_TOKEN",
-				V: s.TwilioClient.AuthToken,
-			},
-			{
-				K: "TWILIO_PHONE_NUMBER",
-				V: s.TwilioClient.PhoneNumber,
-			},
-			{
-				K: "DATA_FILE",
-				V: s.DataFile,
-			},
-			{
-				K: "ADMIN_PHONE",
-				V: s.AdminPhone,
-			},
-			{
-				K: "ADMIN_EMAIL",
-				V: s.AdminEmail,
-			},
-			{
-				K: "CERT_DIR",
-				V: s.CertDir,
-			},
-		},
-		AutoRestart: "on-failure",
-		WantedBy:    "multi-user.target",
-	}
-}
-
-func (s *Server) HostPolicy(ctx context.Context, host string) error {
-	return nil
-}
-
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Handle panics by notifying the admin.
 	defer func() {
@@ -134,6 +89,51 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.User(r).ServeHTTP(w, r)
+}
+
+func (s *Server) SystemdService() *SystemdService {
+	return &SystemdService{
+		Name:  "server",
+		Desc:  "server",
+		After: "network.target",
+		Type:  "simple",
+		Env: []Pair[string, string]{
+			{
+				K: "TWILIO_ACCOUNT_SID",
+				V: s.TwilioClient.AccountSID,
+			},
+			{
+				K: "TWILIO_AUTH_TOKEN",
+				V: s.TwilioClient.AuthToken,
+			},
+			{
+				K: "TWILIO_PHONE_NUMBER",
+				V: s.TwilioClient.PhoneNumber,
+			},
+			{
+				K: "DATA_FILE",
+				V: s.DataFile,
+			},
+			{
+				K: "ADMIN_PHONE",
+				V: s.AdminPhone,
+			},
+			{
+				K: "ADMIN_EMAIL",
+				V: s.AdminEmail,
+			},
+			{
+				K: "CERT_DIR",
+				V: s.CertDir,
+			},
+		},
+		AutoRestart: "on-failure",
+		WantedBy:    "multi-user.target",
+	}
+}
+
+func (s *Server) HostPolicy(ctx context.Context, host string) error {
+	return nil
 }
 
 func (s *Server) User(r *http.Request) *User {
