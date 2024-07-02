@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"runtime/debug"
-	"strings"
 
 	_ "embed"
 
@@ -54,20 +53,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
 			// Respond with a 500 Internal Server Error
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			// Message me
+			s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v\n%s", r.URL.String(), err, debug.Stack()))
 		}
 	}()
 
 	// Log the request.
 	b, _ := httputil.DumpRequest(r, true)
 	log.Println(string(b))
-
-	// Handle www. redirects.
-	if strings.HasPrefix(r.Host, "www.") {
-		url := r.URL
-		url.Host = strings.TrimPrefix("www.", url.Host)
-		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
-		return
-	}
 
 	// Handle auth pages
 	switch r.URL.Path {
@@ -89,6 +82,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.User(r).ServeHTTP(w, r)
+
+	if IsMutation(r) {
+		err := WriteJSONFile(s.DataFile, s)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func (s *Server) SystemdService() *SystemdService {
