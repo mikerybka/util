@@ -2,9 +2,11 @@ package util
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"runtime/debug"
 
 	_ "embed"
@@ -42,6 +44,11 @@ type Server struct {
 	LoginCodes      map[string]string // user ID => 6 digit code
 	SessionTokens   map[string]string // token => user ID
 	LoginCodeMsgFmt string
+}
+
+func (s *Server) Load() {
+	f, _ := os.Open(s.DataFile)
+	json.NewDecoder(f).Decode(s)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
