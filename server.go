@@ -14,23 +14,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
-func NewServer(dataFile string, adminPhone string, twilioClient *TwilioClient, certDir string) *Server {
-	usersTable := NewTable[*User]()
-	usersTable.AddUniqConstraint("ID")
-	usersTable.AddUniqConstraint("Phone")
-	usersTable.AddUniqConstraint("Email")
-	return &Server{
-		DataFile:        dataFile,
-		TwilioClient:    twilioClient,
-		AdminPhone:      adminPhone,
-		Users:           usersTable,
-		LoginCodes:      map[string]string{},
-		SessionTokens:   map[string]string{},
-		LoginCodeMsgFmt: "Your login code is %s",
-		CertDir:         certDir,
-	}
-}
-
 // Server hosts multiple apps.
 // App data is read from "{datadir}/{host}/data.json".
 // Config is "{datadir}/{host}/config.json" defined by AppConfig.
@@ -44,6 +27,7 @@ type Server struct {
 	LoginCodes      map[string]string // user ID => 6 digit code
 	SessionTokens   map[string]string // token => user ID
 	LoginCodeMsgFmt string
+	GithubSourceDir string
 }
 
 func (s *Server) Load() {
@@ -52,14 +36,10 @@ func (s *Server) Load() {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Handle panics by notifying the admin.
 	defer func() {
 		if err := recover(); err != nil {
-			// Log the error and stack trace
 			log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
-			// Respond with a 500 Internal Server Error
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			// Message the admin
 			err := s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v", r.URL.String(), err))
 			if err != nil {
 				panic(err)
@@ -67,23 +47,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Log the request.
 	NewRequest(r).Log()
 
-	// Handle auth pages
 	switch r.URL.Path {
 	case "/auth/register":
-		s.Register(w, r)
+		s.RegisterForm().ServeHTTP(w, r)
 	case "/auth/send-login-code":
-		s.SendLoginCode(w, r)
+		s.SendLoginCodeForm().ServeHTTP(w, r)
 	case "/auth/login":
-		s.Login(w, r)
-	// case "/auth/whoami":
-	// 	s.WhoAmI(w, r)
-	// 	return
-	// case "/auth/logout":
-	// 	s.Logout(w, r)
-	// 	return
+		s.LoginForm().ServeHTTP(w, r)
+	case "/webhooks/github":
+		s.GithubMirror().ServeHTTP(w, r)
 	default:
 		s.User(r).ServeHTTP(w, r)
 	}
@@ -190,8 +164,14 @@ func (s *Server) Start() error {
 	return <-errChan
 }
 
-func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
-	form := &Form{
+func (s *Server) GithubMirror() *GithubMirror {
+	return &GithubMirror{
+		Workdir: s.GithubSourceDir,
+	}
+}
+
+func (s *Server) RegisterForm() *Form {
+	return &Form{
 		Name: "Register",
 		Fields: []Field{
 			{
@@ -228,12 +208,10 @@ func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/auth/send-login-code", http.StatusFound)
 		},
 	}
-	form.ServeHTTP(w, r)
 }
 
-// SendLoginCode sends a login code the users phone number on file via Twilio SMS.
-func (a *Server) SendLoginCode(w http.ResponseWriter, r *http.Request) {
-	form := &Form{
+func (a *Server) SendLoginCodeForm() *Form {
+	return &Form{
 		Name: "Send Login Code",
 		Fields: []Field{
 			{
@@ -266,13 +244,10 @@ func (a *Server) SendLoginCode(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/auth/login?UserID="+userID, http.StatusFound)
 		},
 	}
-	form.ServeHTTP(w, r)
 }
 
-// Login creates a user session.
-// It returns a token or error.
-func (a *Server) Login(w http.ResponseWriter, r *http.Request) {
-	form := &Form{
+func (a *Server) LoginForm() *Form {
+	return &Form{
 		Name: "Login",
 		Fields: []Field{
 			{
@@ -316,7 +291,6 @@ func (a *Server) Login(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusFound)
 		},
 	}
-	form.ServeHTTP(w, r)
 }
 
 func (a *Server) WhoAmI(token string) string {
