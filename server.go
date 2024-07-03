@@ -232,6 +232,9 @@ func (a *Server) SendLoginCodeForm() *Form {
 
 			// Create a login code.
 			code := RandomCode(6)
+			if a.LoginCodes == nil {
+				a.LoginCodes = make(map[string]string)
+			}
 			a.LoginCodes[userID] = code
 
 			// Send the login code.
@@ -281,6 +284,9 @@ func (a *Server) LoginForm() *Form {
 			}
 
 			// Save the token.
+			if a.SessionTokens == nil {
+				a.SessionTokens = make(map[string]string)
+			}
 			a.SessionTokens[token] = userID
 
 			http.SetCookie(w, &http.Cookie{
