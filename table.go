@@ -40,8 +40,8 @@ func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (t *Table[T]) AddUniqConstraint(col string) error {
 	t.Constraints = append(t.Constraints, TableConstraint{
-		Column:     col,
-		Uniqueness: true,
+		Col:  col,
+		Uniq: true,
 	})
 	return nil
 }
@@ -85,8 +85,11 @@ func (t *Table[T]) IDs() Set[string] {
 
 func (t *Table[T]) FindBy(col string, value any) map[string]T {
 	res := map[string]T{}
+	if t == nil {
+		return res
+	}
 	for id, v := range t.Rows {
-		field := reflect.ValueOf(v).FieldByName(col).Interface()
+		field := FieldValue(v, col)
 		if reflect.DeepEqual(field, value) {
 			res[id] = v
 		}
@@ -98,11 +101,11 @@ func (t *Table[T]) Insert(v T) error {
 	// Make sure the row meets any constraints.
 	for _, c := range t.Constraints {
 		// Handle unique
-		if c.Uniqueness {
-			field := reflect.ValueOf(v).FieldByName(c.Column).Interface()
-			res := t.FindBy(c.Column, field)
+		if c.Uniq {
+			field := FieldValue(v, c.Col)
+			res := t.FindBy(c.Col, field)
 			if len(res) > 0 {
-				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Column, field)
+				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
 			}
 		}
 	}
@@ -115,7 +118,7 @@ func (t *Table[T]) Insert(v T) error {
 
 	// Update the indexes.
 	for fieldID, index := range t.Indexes {
-		value := reflect.ValueOf(v).FieldByName(fieldID).Interface().(string)
+		value := (FieldValue(v, fieldID)).(string)
 		index.Add(value, id)
 	}
 
@@ -126,11 +129,11 @@ func (t *Table[T]) Update(id string, v T) error {
 	// Make sure the row meets any constraints.
 	for _, c := range t.Constraints {
 		// Handle unique
-		if c.Uniqueness {
-			field := reflect.ValueOf(v).FieldByName(c.Column).Interface()
-			res := t.FindBy(c.Column, field)
+		if c.Uniq {
+			field := FieldValue(v, c.Col)
+			res := t.FindBy(c.Col, field)
 			if len(res) > 0 {
-				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Column, field)
+				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
 			}
 		}
 	}
@@ -139,8 +142,8 @@ func (t *Table[T]) Update(id string, v T) error {
 
 	// Update the indexes.
 	for fieldID, index := range t.Indexes {
-		oldValue := reflect.ValueOf(old).FieldByName(fieldID).Interface().(string)
-		newValue := reflect.ValueOf(v).FieldByName(fieldID).Interface().(string)
+		oldValue := FieldValue(old, fieldID).(string)
+		newValue := FieldValue(v, fieldID).(string)
 		if oldValue != newValue {
 			index.Remove(oldValue, id)
 			index.Add(newValue, id)
@@ -158,7 +161,7 @@ func (t *Table[T]) Delete(id string) {
 
 	// Update the indexes.
 	for fieldID, index := range t.Indexes {
-		oldValue := reflect.ValueOf(old).FieldByName(fieldID).Interface().(string)
+		oldValue := FieldValue(old, fieldID).(string)
 		index.Remove(oldValue, id)
 	}
 

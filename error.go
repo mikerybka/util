@@ -14,7 +14,6 @@ func (e *Error) HTML() *html.Node {
 		Type: html.DoctypeNode,
 		Data: "html",
 	}
-
 	htmlNode := &html.Node{
 		Type: html.ElementNode,
 		Data: "html",

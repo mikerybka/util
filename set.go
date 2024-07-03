@@ -11,6 +11,9 @@ func (s Set[T]) List() []T {
 }
 
 func (s Set[T]) Add(v T) {
+	if s == nil {
+		s = make(Set[T])
+	}
 	s[v] = true
 }
 

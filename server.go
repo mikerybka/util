@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"runtime/debug"
 
 	_ "embed"
 
 	"golang.org/x/crypto/acme/autocert"
-	"golang.org/x/net/html"
 )
 
-func NewServer(dataFile string, adminPhone string, twilioClient *TwilioClient) *Server {
+func NewServer(dataFile string, adminPhone string, twilioClient *TwilioClient, certDir string) *Server {
 	usersTable := NewTable[*User]()
 	usersTable.AddUniqConstraint("ID")
 	usersTable.AddUniqConstraint("Phone")
@@ -27,6 +25,7 @@ func NewServer(dataFile string, adminPhone string, twilioClient *TwilioClient) *
 		LoginCodes:      map[string]string{},
 		SessionTokens:   map[string]string{},
 		LoginCodeMsgFmt: "Your login code is %s",
+		CertDir:         certDir,
 	}
 }
 
@@ -54,34 +53,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Respond with a 500 Internal Server Error
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			// Message the admin
-			s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v\n%s", r.URL.String(), err, debug.Stack()))
+			err := s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v", r.URL.String(), err))
+			if err != nil {
+				panic(err)
+			}
 		}
 	}()
 
 	// Log the request.
-	b, _ := httputil.DumpRequest(r, true)
-	log.Println(string(b))
+	NewRequest(r).Log()
 
 	// Handle auth pages
 	switch r.URL.Path {
 	case "/auth/register":
 		s.Register(w, r)
-		return
 	case "/auth/send-login-code":
 		s.SendLoginCode(w, r)
-		return
 	case "/auth/login":
 		s.Login(w, r)
-		return
-		// case "/auth/whoami":
-		// 	s.WhoAmI(w, r)
-		// 	return
-		// case "/auth/logout":
-		// 	s.Logout(w, r)
-		// 	return
+	// case "/auth/whoami":
+	// 	s.WhoAmI(w, r)
+	// 	return
+	// case "/auth/logout":
+	// 	s.Logout(w, r)
+	// 	return
+	default:
+		s.User(r).ServeHTTP(w, r)
 	}
-
-	s.User(r).ServeHTTP(w, r)
 
 	if IsMutation(r) {
 		err := WriteJSONFile(s.DataFile, s)
@@ -209,43 +207,18 @@ func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
 		ServePOST: func(w http.ResponseWriter, r *http.Request) {
 			user := &User{
 				ID:        RandomID(),
-				Phone:     PhoneNumber(r.FormValue("Phone")),
-				Email:     Email(r.FormValue("Email")),
+				Phone:     r.FormValue("Phone"),
+				Email:     r.FormValue("Email"),
 				FirstName: r.FormValue("First Name"),
 				LastName:  r.FormValue("Last Name"),
 			}
 			err := s.Users.Insert(user)
 			if err != nil {
-				e := &Error{
-					Message: err.Error(),
-					Actions: []Action{
-						{
-							Name: "Try again",
-							URL:  r.URL.Path,
-						},
-					},
-				}
-				html.Render(w, e.HTML())
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 
-			// Generate a unique token
-			var token string
-			for {
-				token = RandomToken(32)
-				if _, ok := s.SessionTokens[token]; !ok {
-					break
-				}
-			}
-
-			// Save the token.
-			s.SessionTokens[token] = user.ID
-
-			http.SetCookie(w, &http.Cookie{
-				Name:  "Token",
-				Value: token,
-			})
-			http.Redirect(w, r, "/"+user.ID, http.StatusFound)
+			http.Redirect(w, r, "/auth/send-login-code", http.StatusFound)
 		},
 	}
 	form.ServeHTTP(w, r)
@@ -268,16 +241,7 @@ func (a *Server) SendLoginCode(w http.ResponseWriter, r *http.Request) {
 			users := a.Users.FindBy("Phone", phone)
 			userID, user, found := OnlyOne(users)
 			if !found {
-				e := &Error{
-					Message: "Unknown number",
-					Actions: []Action{
-						{
-							Name: "Register",
-							URL:  "/auth/register",
-						},
-					},
-				}
-				html.Render(w, e.HTML())
+				http.Redirect(w, r, "/auth/register", http.StatusSeeOther)
 				return
 			}
 
@@ -286,14 +250,13 @@ func (a *Server) SendLoginCode(w http.ResponseWriter, r *http.Request) {
 			a.LoginCodes[userID] = code
 
 			// Send the login code.
-			msg := fmt.Sprintf(a.LoginCodeMsgFmt)
-			err := a.TwilioClient.SendSMS(string(user.Phone), msg)
+			msg := fmt.Sprintf(a.LoginCodeMsgFmt, code)
+			err := a.TwilioClient.SendSMS(user.Phone, msg)
 			if err != nil {
 				panic(err)
 			}
 
-			http.Redirect(w, r, "/auth/login", http.StatusFound)
-			return
+			http.Redirect(w, r, "/auth/login?UserID="+userID, http.StatusFound)
 		},
 	}
 	form.ServeHTTP(w, r)
@@ -306,7 +269,7 @@ func (a *Server) Login(w http.ResponseWriter, r *http.Request) {
 		Name: "Login",
 		Fields: []Field{
 			{
-				Name: "ID",
+				Name: "UserID",
 				Type: StringType,
 			},
 			{
@@ -319,18 +282,12 @@ func (a *Server) Login(w http.ResponseWriter, r *http.Request) {
 			code := r.FormValue("Code")
 			ok := a.CheckLoginCode(userID, code)
 			if !ok {
-				e := &Error{
-					Message: "Bad code",
-					Actions: []Action{
-						{
-							Name: "Try again",
-							URL:  r.URL.Path,
-						},
-					},
-				}
-				html.Render(w, e.HTML())
+				http.Error(w, "wrong code", http.StatusBadRequest)
 				return
 			}
+
+			// Invalidate the login code
+			delete(a.LoginCodes, userID)
 
 			// Generate a unique token
 			var token string
@@ -347,8 +304,9 @@ func (a *Server) Login(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &http.Cookie{
 				Name:  "Token",
 				Value: token,
+				Path:  "/",
 			})
-			http.Redirect(w, r, "/"+userID, http.StatusFound)
+			http.Redirect(w, r, "/", http.StatusFound)
 		},
 	}
 	form.ServeHTTP(w, r)

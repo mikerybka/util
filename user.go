@@ -10,8 +10,8 @@ type User struct {
 	ID string
 
 	// Contact
-	Phone PhoneNumber
-	Email Email
+	Phone string
+	Email string
 
 	// Personal
 	FirstName string

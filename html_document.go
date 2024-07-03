@@ -16,8 +16,8 @@ func (d *HTMLDocument) Write(w io.Writer) error {
 	w.Write([]byte("<html>"))
 	d.Head.Write(w)
 	w.Write([]byte("<body>"))
-	html.Render(w, d.Body)
+	err := html.Render(w, d.Body)
 	w.Write([]byte("</body>"))
 	w.Write([]byte("</html>"))
-	return nil
+	return err
 }

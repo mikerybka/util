@@ -12,18 +12,14 @@ type Form struct {
 	ServePOST func(w http.ResponseWriter, r *http.Request)
 }
 
-func (f *Form) HTML() *html.Node {
+func (f *Form) HTML(prefilled map[string]string) *html.Node {
 	node := &html.Node{
 		Type: html.ElementNode,
 		Data: "form",
 		Attr: []html.Attribute{
 			{
-				Key: "action",
-				Val: ".",
-			},
-			{
 				Key: "method",
-				Val: "post",
+				Val: "POST",
 			},
 		},
 	}
@@ -43,7 +39,7 @@ func (f *Form) HTML() *html.Node {
 			Data: field.Name + ":",
 		})
 		node.AppendChild(label)
-		node.AppendChild(&html.Node{
+		input := &html.Node{
 			Type: html.ElementNode,
 			Data: "input",
 			Attr: []html.Attribute{
@@ -59,8 +55,13 @@ func (f *Form) HTML() *html.Node {
 					Key: "name",
 					Val: field.Name,
 				},
+				{
+					Key: "value",
+					Val: prefilled[field.Name],
+				},
 			},
-		})
+		}
+		node.AppendChild(input)
 		node.AppendChild(&html.Node{
 			Type: html.ElementNode,
 			Data: "br",
@@ -85,13 +86,20 @@ func (f *Form) HTML() *html.Node {
 
 func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
+		prefilled := map[string]string{}
+		for k := range r.URL.Query() {
+			prefilled[k] = r.URL.Query().Get(k)
+		}
 		doc := &HTMLDocument{
 			Head: &HTMLHead{
 				Title: f.Name,
 			},
-			Body: f.HTML(),
+			Body: f.HTML(prefilled),
 		}
-		doc.Write(w)
+		err := doc.Write(w)
+		if err != nil {
+			panic(err)
+		}
 	} else if r.Method == http.MethodPost {
 		f.ServePOST(w, r)
 	}

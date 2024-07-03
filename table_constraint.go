@@ -1,6 +1,6 @@
 package util
 
 type TableConstraint struct {
-	Column     string
-	Uniqueness bool
+	Col  string
+	Uniq bool
 }
