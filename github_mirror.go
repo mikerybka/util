@@ -17,7 +17,8 @@ func (g *GithubMirror) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		return
 	}
-	req := ReadJSON[*GithubWebhookRequest](r.Body)
+	req := ReadJSON[GithubWebhookRequest](r.Body)
+	fmt.Println(req)
 	err := g.Pull(req.Repository.FullName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
