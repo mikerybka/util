@@ -113,6 +113,9 @@ func (t *Table[T]) Insert(v T) error {
 	// Generate a new ID.
 	id := RandomID()
 
+	// Overwrite ID field in v if it exists.
+	SetField(v, "ID", id)
+
 	// Update the data.
 	t.Rows[id] = v
 

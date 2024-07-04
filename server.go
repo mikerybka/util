@@ -56,6 +56,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.SendLoginCodeForm().ServeHTTP(w, r)
 	case "/auth/login":
 		s.LoginForm().ServeHTTP(w, r)
+	case "/auth/logout":
+		s.LogoutForm().ServeHTTP(w, r)
 	case "/webhooks/github":
 		s.GithubMirror().ServeHTTP(w, r)
 	default:
@@ -192,19 +194,16 @@ func (s *Server) RegisterForm() *Form {
 			},
 		},
 		ServePOST: func(w http.ResponseWriter, r *http.Request) {
-			user := &User{
-				ID:        RandomID(),
+			err := s.Users.Insert(&User{
 				Phone:     r.FormValue("Phone"),
 				Email:     r.FormValue("Email"),
 				FirstName: r.FormValue("First Name"),
 				LastName:  r.FormValue("Last Name"),
-			}
-			err := s.Users.Insert(user)
+			})
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-
 			http.Redirect(w, r, "/auth/send-login-code", http.StatusFound)
 		},
 	}
@@ -294,6 +293,21 @@ func (a *Server) LoginForm() *Form {
 				Value: token,
 				Path:  "/",
 			})
+			http.Redirect(w, r, "/", http.StatusFound)
+		},
+	}
+}
+
+func (a *Server) LogoutForm() *Form {
+	return &Form{
+		Name:   "Logout",
+		Fields: []Field{},
+		ServePOST: func(w http.ResponseWriter, r *http.Request) {
+			token, err := r.Cookie("Token")
+			if err == nil {
+				delete(a.SessionTokens, token.Value)
+				DeleteCookie(w, "Token")
+			}
 			http.Redirect(w, r, "/", http.StatusFound)
 		},
 	}
