@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 
 	_ "embed"
@@ -19,6 +19,7 @@ import (
 // Config is "{datadir}/{host}/config.json" defined by AppConfig.
 type Server struct {
 	DataFile        string
+	ErrorsDir       string
 	TwilioClient    *TwilioClient
 	AdminPhone      string
 	AdminEmail      string
@@ -38,12 +39,9 @@ func (s *Server) Load() {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			err := s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s%s: %v", r.Host, r.URL.String(), err))
-			if err != nil {
-				panic(err)
-			}
+			ServeError(w, http.StatusInternalServerError)
+			s.LogError(err)
+			s.NotifyAdmin(fmt.Sprintf("ERROR: %s%s: %v", r.Host, r.URL.String(), err))
 		}
 	}()
 
@@ -339,4 +337,27 @@ func (a *Server) CheckLoginCode(userID, code string) bool {
 		return false
 	}
 	return a.LoginCodes[userID] == code
+}
+
+func (s *Server) LogError(e any) {
+	stack := debug.Stack()
+	err := os.MkdirAll(s.ErrorsDir, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	f, err := os.Create(filepath.Join(s.ErrorsDir, UnixNanoTimestamp()))
+	if err != nil {
+		panic(err)
+	}
+	_, err = fmt.Fprintf(f, "%v\n%s\n", e, stack)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Server) NotifyAdmin(msg string) {
+	err := s.TwilioClient.SendSMS(s.AdminPhone, msg)
+	if err != nil {
+		panic(err)
+	}
 }
