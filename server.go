@@ -40,7 +40,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err := recover(); err != nil {
 			log.Printf("Panic recovered: %v\n%s", err, debug.Stack())
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			err := s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s: %v", r.URL.String(), err))
+			err := s.TwilioClient.SendSMS(s.AdminPhone, fmt.Sprintf("ERROR: %s%s: %v", r.Host, r.URL.String(), err))
 			if err != nil {
 				panic(err)
 			}
