@@ -32,6 +32,7 @@ type Table[T any] struct {
 	Rows        map[string]T
 	Indexes     map[string]Index
 	Constraints []TableConstraint
+	RowLimit    int
 }
 
 func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +99,11 @@ func (t *Table[T]) FindBy(col string, value any) map[string]T {
 }
 
 func (t *Table[T]) Insert(v T) error {
+	if t.RowLimit > 0 {
+		if len(t.Rows) >= t.RowLimit {
+			return fmt.Errorf("row limit of %d reached", t.RowLimit)
+		}
+	}
 	// Make sure the row meets any constraints.
 	for _, c := range t.Constraints {
 		// Handle unique

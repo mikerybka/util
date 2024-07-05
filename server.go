@@ -18,17 +18,18 @@ import (
 // App data is read from "{datadir}/{host}/data.json".
 // Config is "{datadir}/{host}/config.json" defined by AppConfig.
 type Server struct {
-	DataFile        string
-	ErrorsDir       string
-	TwilioClient    *TwilioClient
-	AdminPhone      string
-	AdminEmail      string
-	CertDir         string
-	Users           *Table[*User]
-	LoginCodes      map[string]string // user ID => 6 digit code
-	SessionTokens   map[string]string // token => user ID
-	LoginCodeMsgFmt string
-	GithubSourceDir string
+	DataFile          string
+	ErrorsDir         string
+	TwilioClient      *TwilioClient
+	AdminPhone        string
+	AdminEmail        string
+	CertDir           string
+	Users             *Table[*User]
+	LoginCodes        map[string]string // user ID => 6 digit code
+	SessionTokens     map[string]string // token => user ID
+	LoginCodeMsgFmt   string
+	GithubSourceDir   string
+	AllowRegistration bool
 }
 
 func (s *Server) Load() {
@@ -72,40 +73,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) SystemdService() *SystemdService {
 	return &SystemdService{
-		Name:  "server",
-		Desc:  "server",
-		After: "network.target",
-		Type:  "simple",
-		Env: []Pair[string, string]{
-			{
-				K: "TWILIO_ACCOUNT_SID",
-				V: s.TwilioClient.AccountSID,
-			},
-			{
-				K: "TWILIO_AUTH_TOKEN",
-				V: s.TwilioClient.AuthToken,
-			},
-			{
-				K: "TWILIO_PHONE_NUMBER",
-				V: s.TwilioClient.PhoneNumber,
-			},
-			{
-				K: "DATA_FILE",
-				V: s.DataFile,
-			},
-			{
-				K: "ADMIN_PHONE",
-				V: s.AdminPhone,
-			},
-			{
-				K: "ADMIN_EMAIL",
-				V: s.AdminEmail,
-			},
-			{
-				K: "CERT_DIR",
-				V: s.CertDir,
-			},
-		},
+		Name:        "server",
+		Desc:        "server",
+		After:       "network.target",
+		Type:        "simple",
+		Env:         []Pair[string, string]{},
 		AutoRestart: "on-failure",
 		WantedBy:    "multi-user.target",
 	}
