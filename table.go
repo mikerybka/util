@@ -3,7 +3,9 @@ package util
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"reflect"
+	"strconv"
 )
 
 func NewTable[T any]() *Table[T] {
@@ -29,6 +31,7 @@ func NewTable[T any]() *Table[T] {
 }
 
 type Table[T any] struct {
+	Path        string
 	Rows        map[string]T
 	Indexes     map[string]Index
 	Constraints []TableConstraint
@@ -36,7 +39,29 @@ type Table[T any] struct {
 }
 
 func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "wip")
+	p := ParsePath(r.URL.Path)
+	if len(p) == 0 {
+		switch r.Method {
+		case http.MethodGet:
+			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+			if page == 0 {
+				page = 1
+			}
+			t.List(page).ServeHTTP(w, r)
+		case http.MethodPost:
+			var v T
+			id, err := t.Insert(v)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			http.Redirect(w, r, filepath.Join(t.Path, id), http.StatusCreated)
+		}
+	}
+}
+
+func (t *Table[T]) List(page int) *List {
+	return &List{}
 }
 
 func (t *Table[T]) AddUniqConstraint(col string) error {
@@ -98,10 +123,13 @@ func (t *Table[T]) FindBy(col string, value any) map[string]T {
 	return res
 }
 
-func (t *Table[T]) Insert(v T) error {
+func (t *Table[T]) Insert(v T) (string, error) {
+	if t == nil {
+		t = NewTable[T]()
+	}
 	if t.RowLimit > 0 {
 		if len(t.Rows) >= t.RowLimit {
-			return fmt.Errorf("row limit of %d reached", t.RowLimit)
+			return "", fmt.Errorf("row limit of %d reached", t.RowLimit)
 		}
 	}
 	// Make sure the row meets any constraints.
@@ -111,7 +139,7 @@ func (t *Table[T]) Insert(v T) error {
 			field := FieldValue(v, c.Col)
 			res := t.FindBy(c.Col, field)
 			if len(res) > 0 {
-				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
+				return "", fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
 			}
 		}
 	}
@@ -131,7 +159,7 @@ func (t *Table[T]) Insert(v T) error {
 		index.Add(value, id)
 	}
 
-	return nil
+	return id, nil
 }
 
 func (t *Table[T]) Update(id string, v T) error {

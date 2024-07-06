@@ -164,7 +164,7 @@ func (s *Server) RegisterForm() *Form {
 			},
 		},
 		ServePOST: func(w http.ResponseWriter, r *http.Request) {
-			err := s.Users.Insert(&User{
+			id, err := s.Users.Insert(&User{
 				Phone:     r.FormValue("Phone"),
 				Email:     r.FormValue("Email"),
 				FirstName: r.FormValue("First Name"),
@@ -174,7 +174,7 @@ func (s *Server) RegisterForm() *Form {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			http.Redirect(w, r, "/auth/send-login-code", http.StatusFound)
+			http.Redirect(w, r, "/auth/send-login-code?userID="+id, http.StatusFound)
 		},
 	}
 }

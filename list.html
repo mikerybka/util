@@ -1,0 +1,12 @@
+<div class="list">
+{{ range .Items }}
+    <a href="{{ .URL }}" id="">
+        <div class="list-item">
+            {{ .Name }}
+        </div>
+    </a>
+{{ end }}
+<form method="POST">
+    <input type="submit" value="Add"></input>
+</form>
+</div>

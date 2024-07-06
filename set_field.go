@@ -10,6 +10,9 @@ func SetField(v any, fieldName string, fieldValue any) {
 	if val.Type().Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
+	if val.Type().Kind() != reflect.Struct {
+		return
+	}
 	f := val.FieldByName(fieldName)
 	if !f.IsValid() {
 		panic(fmt.Errorf("no such field: %s in obj", fieldName))

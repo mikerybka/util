@@ -25,7 +25,7 @@ type AuthSystem struct {
 	SessionTokens map[string]string // token => user ID
 }
 
-func (a *AuthSystem) Register(user *User) error {
+func (a *AuthSystem) Register(user *User) (string, error) {
 	return a.Users.Insert(user)
 }
 

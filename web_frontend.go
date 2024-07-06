@@ -12,7 +12,7 @@ var mainJS []byte
 //go:embed web/dist/main.css
 var mainCSS []byte
 
-var htmlTmpl *template.Template = template.Must(template.New("main.html").Parse(`<!DOCTYPE html>
+var htmldocTmpl *template.Template = template.Must(template.New("main.html").Parse(`<!DOCTYPE html>
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -66,7 +66,7 @@ func (fe *WebFrontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := htmlTmpl.Execute(w, fe.HTMLData())
+	err := htmldocTmpl.Execute(w, fe.HTMLData())
 	if err != nil {
 		panic(err)
 	}
