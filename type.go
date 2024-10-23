@@ -2,58 +2,113 @@ package util
 
 import (
 	"fmt"
-	"io"
-	"strings"
 )
 
 type Type struct {
-	IsScalar    bool
-	Kind        string
-	IsPointer   bool
-	IsArray     bool
-	IsMap       bool
-	ElemType    string
-	IsStruct    bool
-	Fields      []Field
-	Methods     map[string]*Function
-	DefaultJSON string
+	Name        Name                 `json:"name"`
+	Description string               `json:"description"`
+	IsScalar    bool                 `json:"isScalar"`
+	IsArray     bool                 `json:"isArray"`
+	IsMap       bool                 `json:"isMap"`
+	ElemType    string               `json:"elemType"`
+	IsStruct    bool                 `json:"isStruct"`
+	Fields      []Field              `json:"fields"`
+	Methods     map[string]*Function `json:"methods"`
+	DefaultJSON string               `json:"defaultJSON"`
 }
 
-func (t *Type) GoString(indent int) string {
+func (t *Type) WriteTypeScriptFile(path string) error {
 	if t.IsScalar {
-		return t.Kind
-	}
-	if t.IsPointer {
-		return "*" + t.ElemType
-	}
-	if t.IsArray {
-		return "[]" + t.ElemType
-	}
-	if t.IsMap {
-		return "map[string]" + t.ElemType
-	}
-	if t.IsStruct {
-		s := strings.Builder{}
-		s.WriteString("struct {\n")
-		for _, f := range t.Fields {
-			for i := 0; i < indent+1; i++ {
-				s.WriteString("\t")
-			}
-			s.WriteString(f.Name)
-			s.WriteString(" ")
-			s.WriteString(f.Type.GoString(indent + 1))
-			s.WriteString("\n")
+		st := &ScalarType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
 		}
-		s.WriteString("}")
-		return s.String()
+		return st.WriteTypeScriptFile(path)
 	}
-	panic("unknown type")
+
+	if t.IsArray {
+		at := &ArrayType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return at.WriteTypeScriptFile(path)
+	}
+
+	if t.IsMap {
+		mt := &MapType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return mt.WriteTypeScriptFile(path)
+	}
+
+	if t.IsStruct {
+		st := &StructType{
+			Name:        t.Name,
+			Description: t.Description,
+			Fields:      t.Fields,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return st.WriteTypeScriptFile(path)
+	}
+
+	return fmt.Errorf("invalid type")
 }
 
-func (t *Type) WriteGoFile(w io.Writer, pkg, name string) (int, error) {
-	return fmt.Fprintf(w, "package %s\n\ntype %s %s\n", pkg, name, t.GoString(0))
-}
+func (t *Type) WriteGoFile(path string) error {
+	if t.IsScalar {
+		st := &ScalarType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return st.WriteGoFile(path)
+	}
 
-func (t *Type) GoFile(pkg, typ string) string {
-	return fmt.Sprintf("package %s\n\ntype %s %s\n", pkg, typ, t.GoString(0))
+	if t.IsArray {
+		at := &ArrayType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return at.WriteGoFile(path)
+	}
+
+	if t.IsMap {
+		mt := &MapType{
+			Name:        t.Name,
+			Description: t.Description,
+			ElemType:    t.ElemType,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return mt.WriteGoFile(path)
+	}
+
+	if t.IsStruct {
+		st := &StructType{
+			Name:        t.Name,
+			Description: t.Description,
+			Fields:      t.Fields,
+			Methods:     t.Methods,
+			DefaultJSON: t.DefaultJSON,
+		}
+		return st.WriteGoFile(path)
+	}
+
+	return fmt.Errorf("invalid type")
 }

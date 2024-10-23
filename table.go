@@ -2,206 +2,137 @@ package util
 
 import (
 	"fmt"
-	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"sync"
 )
 
-func NewTable[T any]() *Table[T] {
-	t := &Table[T]{
-		Rows:    make(map[string]T),
-		Indexes: make(map[string]Index),
-	}
-
-	var row T
-	typ := reflect.TypeOf(row)
-	if typ.Kind() == reflect.Pointer {
-		typ = typ.Elem()
-	}
-	if typ.Kind() != reflect.Struct {
-		panic("type not struct")
-	}
-	for i := 0; i < typ.NumField(); i++ {
-		f := typ.Field(i)
-		t.AddIndex(f.Name)
-	}
-
-	return t
-}
-
 type Table[T any] struct {
-	Path        string
-	Rows        map[string]T
-	Indexes     map[string]Index
-	Constraints []TableConstraint
-	RowLimit    int
+	DataDir    string
+	IndexDir   string
+	Indexes    Set[string]
+	postLock   *sync.Mutex
+	indexLocks map[string]*sync.Mutex
 }
 
-func (t *Table[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p := ParsePath(r.URL.Path)
-	if len(p) == 0 {
-		switch r.Method {
-		case http.MethodGet:
-			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-			if page == 0 {
-				page = 1
-			}
-			t.List(page).ServeHTTP(w, r)
-		case http.MethodPost:
-			var v T
-			id, err := t.Insert(v)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			http.Redirect(w, r, filepath.Join(t.Path, id), http.StatusCreated)
+func (t *Table[T]) ListAll() []string {
+	entries, _ := os.ReadDir(t.DataDir)
+	ids := []string{}
+	for _, e := range entries {
+		ids = append(ids, e.Name())
+	}
+	return ids
+}
+
+func (t *Table[T]) Get(id string) (*T, error) {
+	path := filepath.Join(t.DataDir, id)
+	v := new(T)
+	err := ReadJSONFile(path, v)
+	return v, err
+}
+
+func (t *Table[T]) FindIDsBy(k, v string) (Set[string], error) {
+	if !t.Indexes.Has(k) {
+		return nil, fmt.Errorf("field %s not indexed", k)
+	}
+	path := filepath.Join(t.IndexDir, k, v)
+	var index Set[string]
+	ReadJSONFile(path, index)
+	return index, nil
+}
+
+func (t *Table[T]) Delete(id string) error {
+	// Remove indexes
+	oldValue, _ := t.Get(id)
+	for index := range t.Indexes {
+		val := reflect.ValueOf(oldValue)
+		fieldValue := val.Elem().FieldByName(index)
+		path := filepath.Join(t.IndexDir, index, fmt.Sprintf("%s", fieldValue.Interface()))
+		t.indexLocks[index].Lock()
+		var i Set[string]
+		err := ReadJSONFile(path, i)
+		if err != nil {
+			t.indexLocks[index].Unlock()
+			panic(err)
 		}
-	}
-}
-
-func (t *Table[T]) List(page int) *List {
-	return &List{}
-}
-
-func (t *Table[T]) AddUniqConstraint(col string) error {
-	t.Constraints = append(t.Constraints, TableConstraint{
-		Col:  col,
-		Uniq: true,
-	})
-	return nil
-}
-
-func (t *Table[T]) AddIndex(fieldID string) error {
-	// Make sure the field exists and is a string type
-	var row T
-	typ := reflect.TypeOf(row)
-	if typ.Kind() == reflect.Pointer {
-		typ = typ.Elem()
-	}
-	if typ.Kind() != reflect.Struct {
-		panic("type not struct")
-	}
-	f, ok := typ.FieldByName(fieldID)
-	if !ok {
-		return fmt.Errorf("no field %s", fieldID)
-	}
-	if f.Type.Kind() != reflect.String {
-		return fmt.Errorf("field %s not string", fieldID)
-	}
-
-	// Add the index to the map
-	t.Indexes[fieldID] = make(Index)
-
-	return nil
-}
-
-func (t *Table[T]) Find(id string) (T, bool) {
-	v, ok := t.Rows[id]
-	return v, ok
-}
-
-func (t *Table[T]) IDs() Set[string] {
-	s := Set[string]{}
-	for k := range t.Rows {
-		s.Add(k)
-	}
-	return s
-}
-
-func (t *Table[T]) FindBy(col string, value any) map[string]T {
-	res := map[string]T{}
-	if t == nil {
-		return res
-	}
-	for id, v := range t.Rows {
-		field := FieldValue(v, col)
-		if reflect.DeepEqual(field, value) {
-			res[id] = v
-		}
-	}
-	return res
-}
-
-func (t *Table[T]) Insert(v T) (string, error) {
-	if t == nil {
-		t = NewTable[T]()
-	}
-	if t.RowLimit > 0 {
-		if len(t.Rows) >= t.RowLimit {
-			return "", fmt.Errorf("row limit of %d reached", t.RowLimit)
-		}
-	}
-	// Make sure the row meets any constraints.
-	for _, c := range t.Constraints {
-		// Handle unique
-		if c.Uniq {
-			field := FieldValue(v, c.Col)
-			res := t.FindBy(c.Col, field)
-			if len(res) > 0 {
-				return "", fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
-			}
+		i.Remove(id)
+		err = WriteJSONFile(path, i)
+		t.indexLocks[index].Unlock()
+		if err != nil {
+			return fmt.Errorf("writing index %s: %s", index, err)
 		}
 	}
 
-	// Generate a new ID.
-	id := RandomID()
-
-	// Overwrite ID field in v if it exists.
-	SetField(v, "ID", id)
-
-	// Update the data.
-	t.Rows[id] = v
-
-	// Update the indexes.
-	for fieldID, index := range t.Indexes {
-		value := (FieldValue(v, fieldID)).(string)
-		index.Add(value, id)
-	}
-
-	return id, nil
+	// Remove data
+	path := filepath.Join(t.DataDir, id)
+	return os.Remove(path)
 }
 
-func (t *Table[T]) Update(id string, v T) error {
-	// Make sure the row meets any constraints.
-	for _, c := range t.Constraints {
-		// Handle unique
-		if c.Uniq {
-			field := FieldValue(v, c.Col)
-			res := t.FindBy(c.Col, field)
-			if len(res) > 0 {
-				return fmt.Errorf("field %s not unique, a row with the value %s already exists in the table", c.Col, field)
-			}
+func (t *Table[T]) Set(id string, v *T) error {
+	// Remove old indexes
+	oldValue, _ := t.Get(id)
+	for index := range t.Indexes {
+		val := reflect.ValueOf(oldValue)
+		fieldValue := val.Elem().FieldByName(index)
+		path := filepath.Join(t.IndexDir, index, fmt.Sprintf("%s", fieldValue.Interface()))
+		t.indexLocks[index].Lock()
+		var i Set[string]
+		err := ReadJSONFile(path, i)
+		if err != nil {
+			t.indexLocks[index].Unlock()
+			panic(err)
+		}
+		i.Remove(id)
+		err = WriteJSONFile(path, i)
+		t.indexLocks[index].Unlock()
+		if err != nil {
+			return fmt.Errorf("writing index %s: %s", index, err)
 		}
 	}
 
-	old := t.Rows[id]
-
-	// Update the indexes.
-	for fieldID, index := range t.Indexes {
-		oldValue := FieldValue(old, fieldID).(string)
-		newValue := FieldValue(v, fieldID).(string)
-		if oldValue != newValue {
-			index.Remove(oldValue, id)
-			index.Add(newValue, id)
+	// Write new indexes
+	for index := range t.Indexes {
+		val := reflect.ValueOf(v)
+		fieldValue := val.Elem().FieldByName(index)
+		if fieldValue.Type().String() != "string" {
+			panic("only string fields can be indexed")
+		}
+		path := filepath.Join(t.IndexDir, index, fmt.Sprintf("%s", fieldValue.Interface()))
+		t.indexLocks[index].Lock()
+		var i Set[string]
+		err := ReadJSONFile(path, i)
+		if err != nil {
+			t.indexLocks[index].Unlock()
+			panic(err)
+		}
+		i.Add(id)
+		err = WriteJSONFile(path, i)
+		t.indexLocks[index].Unlock()
+		if err != nil {
+			return fmt.Errorf("writing index %s: %s", index, err)
 		}
 	}
 
-	// Update the data.
-	t.Rows[id] = v
+	// Write data
+	path := filepath.Join(t.DataDir, id)
+	err := WriteJSONFile(path, v)
+	if err != nil {
+		return fmt.Errorf("writing data: %s", err)
+	}
 
 	return nil
 }
 
-func (t *Table[T]) Delete(id string) {
-	old := t.Rows[id]
+func (t *Table[T]) Len() int {
+	entries, _ := os.ReadDir(t.DataDir)
+	return len(entries)
+}
 
-	// Update the indexes.
-	for fieldID, index := range t.Indexes {
-		oldValue := FieldValue(old, fieldID).(string)
-		index.Remove(oldValue, id)
-	}
-
-	// Update the data.
-	delete(t.Rows, id)
+func (t *Table[T]) Post(v *T) error {
+	t.postLock.Lock()
+	defer t.postLock.Unlock()
+	id := strconv.Itoa(t.Len())
+	return t.Set(id, v)
 }

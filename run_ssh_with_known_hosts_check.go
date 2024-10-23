@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
-func RunSSHCommandWithKnownHostsCheck(host, user, cmd string, auth []ssh.AuthMethod) error {
+func RunSSHCommandWithKnownHostsCheck(host, user, cmd string, auth []ssh.AuthMethod) ([]byte, error) {
 	// Set up the SSH client configuration.
 	config := &ssh.ClientConfig{
 		User:            user,
@@ -21,33 +21,33 @@ func RunSSHCommandWithKnownHostsCheck(host, user, cmd string, auth []ssh.AuthMet
 	// Connect to the remote server.
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer client.Close()
 
 	// Create an SSH session.
 	session, err := client.NewSession()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer session.Close()
 
 	// Run the provided SSH command.
-	err = session.Run(cmd)
+	out, err := session.CombinedOutput(cmd)
 	if err != nil {
 		// Check if the error is due to a known_hosts issue.
 		if isKnownHostsError(err) {
 			// Attempt to add the new host key to known_hosts.
 			if err := addToKnownHosts(host); err != nil {
-				return err
+				return nil, err
 			}
 			// Retry the SSH command.
-			return session.Run(cmd)
+			return session.CombinedOutput(cmd)
 		}
-		return err
+		return nil, err
 	}
 
-	return nil
+	return out, nil
 }
 
 func isKnownHostsError(err error) bool {
@@ -95,6 +95,9 @@ func appendToKnownHostsFile(knownHostsFile, host string, key ssh.PublicKey) erro
 
 func knownHostsCallback() ssh.HostKeyCallback {
 	knownHostsFile := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+	if !Exists(knownHostsFile) {
+		Touch(knownHostsFile)
+	}
 	knownHostsCallback, err := knownhosts.New(knownHostsFile)
 	if err != nil {
 		fmt.Printf("Error loading known_hosts file: %v\n", err)

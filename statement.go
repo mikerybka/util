@@ -4,14 +4,16 @@ package util
 // There are 4 types of statements: returns, assignments, ifs and loops.
 // Ifs and loops have substatements.
 type Statement struct {
-	IsReturn bool
-	Return   *Expression
+	IsReturn bool        `json:"isReturn"`
+	Return   *Expression `json:"return"`
 
-	IsAssign bool
-	Name     string
-	Value    *Expression
+	IsAssign bool        `json:"isAssign"`
+	Name     string      `json:"name"`
+	Value    *Expression `json:"value"`
 
-	IsIf      bool
-	Condition *Condition
-	Body      []*Statement
+	IsIf      bool         `json:"isIf"`
+	Condition *Condition   `json:"condition"`
+	Body      []*Statement `json:"body"`
+
+	// TODO: loops
 }

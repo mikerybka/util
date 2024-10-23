@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>{{ .Name }}</title>
+       <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                color: #333;
+            }
+
+            .prompt {
+                background-color: white;
+                border-radius: 1rem; /* 16px */
+                padding: 1rem;
+                max-width: 24rem; /* 384px */
+                margin: auto;
+            }
+            
+            .prompt-name {
+                font-weight: 700;
+                font-size: 1.5rem; /* 24px */
+                line-height: 2rem; /* 32px */
+                /* color: #007BFF; */
+            }
+            
+            .prompt-desc {
+                font-size: 0.75rem;
+                padding-top: 0.5rem;
+                color: rgb(31 41 55);
+            }
+
+            .prompt-options {
+                
+            }
+
+            .prompt-option {
+                
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="promt">
+            <div class="prompt-name">
+                {{ .Name }}
+            </div>
+
+            <div class="prompt-desc">
+                {{ .Desc }}
+            </div>
+
+            <div class="prompt-options">
+{{ range .Options }}
+                <a href="{{ .URL }}">
+                    <div class="propmt-option">
+                        {{ .Name }}
+                    </div>
+                </a>
+{{ end }}
+            </div>
+        </div>
+    </body>
+</html>

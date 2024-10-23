@@ -1,13 +1,13 @@
 package util
 
 type Expression struct {
-	IsLiteral bool
-	Value     string
+	IsLiteral bool   `json:"isLiteral"`
+	Value     string `json:"value"`
 
-	IsCall bool
-	Fn     *Ref
-	Args   []*Expression
+	IsCall bool          `json:"isCall"`
+	Fn     *Ref          `json:"fn"`
+	Args   []*Expression `json:"args"`
 
-	IsRef bool
-	Ref   *Ref
+	IsRef bool `json:"isRef"`
+	Ref   *Ref `json:"ref"`
 }

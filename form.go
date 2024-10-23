@@ -1,106 +1,36 @@
 package util
 
 import (
+	_ "embed"
+	"html/template"
 	"net/http"
-
-	"golang.org/x/net/html"
 )
 
 type Form struct {
-	Name      string
-	Fields    []Field
-	ServePOST func(w http.ResponseWriter, r *http.Request)
-}
-
-func (f *Form) HTML(prefilled map[string]string) *html.Node {
-	node := &html.Node{
-		Type: html.ElementNode,
-		Data: "form",
-		Attr: []html.Attribute{
-			{
-				Key: "method",
-				Val: "POST",
-			},
-		},
-	}
-	for _, field := range f.Fields {
-		label := &html.Node{
-			Type: html.ElementNode,
-			Data: "label",
-			Attr: []html.Attribute{
-				{
-					Key: "for",
-					Val: "name",
-				},
-			},
-		}
-		label.AppendChild(&html.Node{
-			Type: html.TextNode,
-			Data: field.Name + ":",
-		})
-		node.AppendChild(label)
-		input := &html.Node{
-			Type: html.ElementNode,
-			Data: "input",
-			Attr: []html.Attribute{
-				{
-					Key: "type",
-					Val: "text",
-				},
-				{
-					Key: "id",
-					Val: field.Name,
-				},
-				{
-					Key: "name",
-					Val: field.Name,
-				},
-				{
-					Key: "value",
-					Val: prefilled[field.Name],
-				},
-			},
-		}
-		node.AppendChild(input)
-		node.AppendChild(&html.Node{
-			Type: html.ElementNode,
-			Data: "br",
-		})
-	}
-	node.AppendChild(&html.Node{
-		Type: html.ElementNode,
-		Data: "input",
-		Attr: []html.Attribute{
-			{
-				Key: "type",
-				Val: "submit",
-			},
-			{
-				Key: "value",
-				Val: "Submit",
-			},
-		},
-	})
-	return node
+	Name   Name
+	Desc   string
+	Fields []Field
+	Handle http.HandlerFunc
 }
 
 func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		prefilled := map[string]string{}
-		for k := range r.URL.Query() {
-			prefilled[k] = r.URL.Query().Get(k)
-		}
-		doc := &HTMLDocument{
-			Head: &HTMLHead{
-				Title: f.Name,
-			},
-			Body: f.HTML(prefilled),
-		}
-		err := doc.Write(w)
-		if err != nil {
-			panic(err)
-		}
+		f.get(w, r)
 	} else if r.Method == http.MethodPost {
-		f.ServePOST(w, r)
+		f.post(w, r)
 	}
 }
+
+func (f *Form) get(w http.ResponseWriter, r *http.Request) {
+	err := template.Must(template.New("form").Parse(formHTML)).Execute(w, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (f *Form) post(w http.ResponseWriter, r *http.Request) {
+	f.Handle(w, r)
+}
+
+//go:embed form.html
+var formHTML string

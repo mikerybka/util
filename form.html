@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>{{ .Name }}</title>
+       <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                color: #333;
+            }
+
+            .form {
+                background-color: white;
+                border-radius: 1rem; /* 16px */
+                padding: 1rem;
+                max-width: 24rem; /* 384px */
+                margin: auto;
+            }
+            
+            .form-name {
+                font-weight: 700;
+                font-size: 1.5rem; /* 24px */
+                line-height: 2rem; /* 32px */
+                /* color: #007BFF; */
+            }
+            
+            .form-desc {
+                font-size: 0.75rem;
+                padding-top: 0.5rem;
+                color: rgb(31 41 55);
+            }
+
+            .form-fields {
+                padding-top: 0.5rem;
+            }
+
+            .form-field {
+                padding-bottom: 0.25rem;
+            }
+
+            .form-field-name {
+                font-weight: 500;
+            }
+
+            .form-field-desc {
+                font-size: 0.5rem;
+                color: rgb(75 85 99);
+            }
+
+            .form-submit {
+                
+            }
+
+        </style>
+    </head>
+    <body>
+        <form class="form" method="POST">
+            <div class="form-name">
+                {{ .Name }}
+            </div>
+
+            <div class="form-desc">
+                {{ .Desc }}
+            </div>
+
+            <div class="form-fields">
+{{ range .Fields }}
+                <div class="form-field">
+                    <div class="form-field-name">
+                        {{ .Name }}
+                    </div>
+                    <div class="form-field-desc">
+                        {{ .Desc }}
+                    </div>
+                    <div class="value" data-id="{{ .Name.ID }}" data-type="{{ .Type }}" data-json='{{ .Type.DefaultJSON }}'>
+                    </div>
+                </div>
+{{ end }}
+            </div>
+
+            <button type="submit" class="form-submit">{{ .Name }}</button>
+        </form>
+
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+      
+        <script>
+            
+            function displayError(err) {
+                document.getElementById('error').innerHTML = "Error: " + err;
+            }
+            
+            function enableSubmit() {
+                document.getElementById('submit').disabled = false;
+            }
+
+            function Editor(props) {
+                const [value, setValue] = React.useState(props.value);
+                const onChange = (v) => {
+                    setValue(v);
+                    props.onChange(v);
+                }
+                const editor = getEditor(props.type);
+                return React.createElement(
+                    'div',
+                    {},
+                    React.createElement(
+                        editor,
+                        {
+                            value,
+                            onChange,
+                        },
+                    ),
+                    React.createElement(
+                        'input',
+                        {
+                            id: props.id,
+                            hidden: true,
+                            value,
+                        },
+                    )
+                )
+                throw new Error("unknown type "+props.type);
+            }
+
+            function getEditor(t) {
+                const editors = {
+                    "bool": BoolEditor,
+                    "int": IntEditor,
+                    "string": StringEditor,
+                    "Text": TextEditor,
+                    "Phone": PhoneEditor,
+                    "Email": EmailEditor,
+                }
+                const editor = editors[t];
+                if (!editor) {
+                    throw new Error("unknown type "+t);
+                }
+                return editor;
+            }
+
+            function BoolEditor(props) {
+                return React.createElement('input', {
+                    type: "checkbox",
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            function IntEditor(props) {
+                return React.createElement('input', {
+                    type: "number",
+                    step: "1",
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            function StringEditor(props) {
+                return React.createElement('input', {
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            function TextEditor(props) {
+                return React.createElement('input', {
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            function PhoneEditor(props) {
+                return React.createElement('input', {
+                    type: "phone",
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            function EmailEditor(props) {
+                return React.createElement('input', {
+                    type: "email",
+                    value: JSON.parse(props.value),
+                    onChange: (e) => props.onChange(JSON.stringify(e.target.value)),
+                })
+            }
+
+            // Mount the editors on each #value element
+            const elements = document.getElementsByClassName('value');
+            Array.from(elements).forEach((el) => {
+                const id = el.getAttribute('data-id')
+                const type = el.getAttribute('data-type');
+                const value = el.getAttribute('data-json');
+                const onChange = (v) => {
+                    el.setAttribute('data-json', v);
+                };
+                ReactDOM.createRoot(el).render(
+                    React.createElement(
+                        React.StrictMode,
+                        null,
+                        React.createElement(Editor, {
+                            id,
+                            type,
+                            value,
+                            onChange,
+                        }),
+                    ),
+                );
+            });
+        </script>
+    </body>
+</html>

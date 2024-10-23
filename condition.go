@@ -1,7 +1,7 @@
 package util
 
 type Condition struct {
-	LHS *Expression
-	Op  string
-	RHS *Expression
+	LHS *Expression `json:"lhs"`
+	Op  string      `json:"op"`
+	RHS *Expression `json:"rhs"`
 }

@@ -1,6 +1,6 @@
 package util
 
 type Ref struct {
-	From string
-	Name string
+	From string `json:"from"`
+	Name string `json:"name"`
 }

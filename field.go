@@ -1,6 +1,7 @@
 package util
 
 type Field struct {
-	Name string
-	Type *Type
+	Name        Name   `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
 }

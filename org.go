@@ -1,14 +1,14 @@
 package util
 
 type Org struct {
-	Members []string
+	Readers Set[string]
+	Writers Set[string]
 }
 
-func (o *Org) HasMember(id string) bool {
-	for _, m := range o.Members {
-		if m == id {
-			return true
-		}
-	}
-	return false
+func (o *Org) IsReader(userID string) bool {
+	return o.Readers.Has(userID)
+}
+
+func (o *Org) IsWriter(userID string) bool {
+	return o.Writers.Has(userID)
 }

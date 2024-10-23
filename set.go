@@ -41,3 +41,7 @@ func (s Set[T]) Union(other Set[T]) Set[T] {
 	}
 	return newSet
 }
+
+func (s Set[T]) Has(v T) bool {
+	return s[v]
+}
