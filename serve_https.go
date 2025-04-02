@@ -19,7 +19,7 @@ func ServeHTTPS(h http.Handler, email, certDir string, allowHost func(host strin
 		Prompt: autocert.AcceptTOS,
 		Cache:  autocert.DirCache(certDir),
 		HostPolicy: func(ctx context.Context, host string) error {
-			if allowHost(host) {
+			if !allowHost(host) {
 				return fmt.Errorf("host not allowed: %s", host)
 			}
 			return nil
