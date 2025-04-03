@@ -17,7 +17,8 @@ func QuadrupleTime(fn1, fn2, fn3, fn4 func()) error {
 		fn1()
 
 		// Wait until 250 ms
-		if time.Now().Nanosecond() > 249_000_000 {
+		now := time.Now()
+		if now.Nanosecond() > 249_000_000 {
 			return fmt.Errorf("fn1 took too long")
 		}
 		d = 250_000_000 - time.Now().Nanosecond()
@@ -27,7 +28,8 @@ func QuadrupleTime(fn1, fn2, fn3, fn4 func()) error {
 		fn2()
 
 		// Wait until 500 ms
-		if time.Now().Nanosecond() > 499_000_000 {
+		now = time.Now()
+		if now.Nanosecond() > 499_000_000 || now.Nanosecond() < 250_000_000 {
 			return fmt.Errorf("fn2 took too long")
 		}
 		d = 500_000_000 - time.Now().Nanosecond()
@@ -37,7 +39,8 @@ func QuadrupleTime(fn1, fn2, fn3, fn4 func()) error {
 		fn3()
 
 		// Wait until 750 ms
-		if time.Now().Nanosecond() > 749_000_000 {
+		now = time.Now()
+		if now.Nanosecond() > 749_000_000 || now.Nanosecond() < 500_000_000 {
 			return fmt.Errorf("fn3 took too long")
 		}
 		d = 750_000_000 - time.Now().Nanosecond()
@@ -47,7 +50,8 @@ func QuadrupleTime(fn1, fn2, fn3, fn4 func()) error {
 		fn4()
 
 		// Sleep until the top of the second again
-		if time.Now().Nanosecond() > 999_000_000 {
+		now = time.Now()
+		if now.Nanosecond() > 999_000_000 || now.Nanosecond() < 750_000_000 {
 			return fmt.Errorf("fn4 took too long")
 		}
 		d = 1_000_000_000 - time.Now().Nanosecond()
