@@ -3,26 +3,36 @@ package util
 import (
 	"html/template"
 	"net/http"
+	"path/filepath"
 )
 
-func NewTemplateServer[DataType any](tmpl *template.Template, dataPath string) *TemplateServer[DataType] {
+func NewTemplateServer[DataType any](tmpl *template.Template, workdir, userID string) *TemplateServer[DataType] {
 	return &TemplateServer[DataType]{
-		Tmpl:     tmpl,
-		DataPath: dataPath,
+		Tmpl:    tmpl,
+		Workdir: workdir,
+		UserID:  userID,
 	}
 }
 
 type TemplateServer[DataType any] struct {
-	Tmpl     *template.Template
-	DataPath string
+	Tmpl    *template.Template
+	Workdir string
+	UserID  string
 }
 
 func (s *TemplateServer[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	d := new(T)
-	err := ReadJSONFile(s.DataPath, d)
+	path := filepath.Join(s.Workdir, r.URL.Path)
+	err := ReadJSONFile(path, d)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.Tmpl.Execute(w, d)
+	s.Tmpl.Execute(w, struct {
+		UserID string
+		Data   any
+	}{
+		UserID: s.UserID,
+		Data:   d,
+	})
 }
