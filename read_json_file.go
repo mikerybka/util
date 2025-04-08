@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"os"
 )
@@ -9,6 +10,9 @@ import (
 func ReadJSONFile(path string, v any) error {
 	b, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return err
 	}
 	return json.Unmarshal(b, v)
