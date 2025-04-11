@@ -28,11 +28,16 @@ func (s *TemplateServer[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.Tmpl.Execute(w, struct {
+	// TODO: add func for PathValue
+	err = s.Tmpl.Execute(w, struct {
 		UserID string
 		Data   any
 	}{
 		UserID: s.UserID,
 		Data:   d,
 	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
