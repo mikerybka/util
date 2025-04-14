@@ -75,18 +75,43 @@ func PasswordProtected(passwd string, h http.Handler) http.Handler {
 
 func passwordInputPage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`<!DOCTYPE html>
-		<html lang="en">
-		<head>
-		  <meta charset="UTF-8">
-		  <title>Password</title>
-		</head>
-		<body>
-		  <h1>Password please.</h1>
-		  <form method="POST" action="/auth/login?target=%s">
-			<input type="password" id="password" name="password" required>
-			<button type="submit">Enter</button>
-		  </form>
-		</body>
-		</html>
-		`, r.URL)))
+	<html lang="en">
+	<head>
+	  <meta charset="UTF-8" />
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	  <title>Password Protected</title>
+	  <script src="https://cdn.tailwindcss.com"></script>
+	</head>
+	<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+	  <div id="form-wrapper" class="w-full max-w-sm p-6 bg-white rounded-2xl shadow-lg transition-transform duration-300 transform">
+		<form method="POST" action="/auth/login?target=%s">
+		  <h1 class="text-lg font-semibold text-gray-800 mb-4">This site is password protected.</h1>
+		  <input
+			id="password"
+			name="password"
+			type="password"
+			placeholder="Enter password"
+			class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black mb-4"
+			required
+		  />
+		  <button type="submit" class="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-900 transition">Enter</button>
+		</form>
+	  </div>
+	
+	  <script>
+		const input = document.getElementById('password');
+		const wrapper = document.getElementById('form-wrapper');
+	
+		input.addEventListener('focus', () => {
+		  wrapper.classList.add('-translate-y-24');
+		});
+	
+		input.addEventListener('blur', () => {
+		  wrapper.classList.remove('-translate-y-24');
+		});
+	  </script>
+	</body>
+	</html>
+	
+`, r.URL)))
 }
