@@ -7,7 +7,8 @@ import (
 )
 
 type StreamBroadcaster struct {
-	StartFunc func() (io.ReadCloser, error)
+	ContentType string
+	StartFunc   func() (io.ReadCloser, error)
 
 	clientsMu sync.Mutex
 	clients   map[chan []byte]struct{}
@@ -19,14 +20,15 @@ type StreamBroadcaster struct {
 	stopCh    chan struct{}
 }
 
-func NewStreamBroadcaster(startFunc func() (io.ReadCloser, error)) *StreamBroadcaster {
+func NewStreamBroadcaster(contentType string, startFunc func() (io.ReadCloser, error)) *StreamBroadcaster {
 	sb := &StreamBroadcaster{
-		StartFunc: startFunc,
-		clients:   make(map[chan []byte]struct{}),
-		add:       make(chan chan []byte),
-		remove:    make(chan chan []byte),
-		broadcast: make(chan []byte, 64),
-		stopCh:    make(chan struct{}),
+		ContentType: contentType,
+		StartFunc:   startFunc,
+		clients:     make(map[chan []byte]struct{}),
+		add:         make(chan chan []byte),
+		remove:      make(chan chan []byte),
+		broadcast:   make(chan []byte, 64),
+		stopCh:      make(chan struct{}),
 	}
 	go sb.run()
 	return sb
@@ -106,25 +108,23 @@ func (sb *StreamBroadcaster) startStreaming() {
 	}
 }
 
-func (sb *StreamBroadcaster) HTTPHandler(contentType string) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", contentType)
-		flusher, ok := w.(http.Flusher)
-		if !ok {
-			http.Error(w, "Streaming not supported", http.StatusInternalServerError)
-			return
-		}
+func (sb *StreamBroadcaster) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", sb.ContentType)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
 
-		client := make(chan []byte, 16)
-		sb.add <- client
-		defer func() { sb.remove <- client }()
+	client := make(chan []byte, 16)
+	sb.add <- client
+	defer func() { sb.remove <- client }()
 
-		for chunk := range client {
-			_, err := w.Write(chunk)
-			if err != nil {
-				break
-			}
-			flusher.Flush()
+	for chunk := range client {
+		_, err := w.Write(chunk)
+		if err != nil {
+			break
 		}
+		flusher.Flush()
 	}
 }
