@@ -25,7 +25,11 @@ func NewLiveObject[T http.Handler](path string, value T) *LiveObject[T] {
 		Path:  path,
 		Value: value,
 	}
-	OnFileChange(path, obj.Load)
+	obj.Load()
+	err := OnFileChange(path, obj.Load)
+	if err != nil {
+		panic(err)
+	}
 	return obj
 }
 
