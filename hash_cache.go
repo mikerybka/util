@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/mikerybka/pkg/util"
 )
 
 type HashCache struct {
@@ -51,7 +49,7 @@ func (s *HashCache) path(hash [32]byte) string {
 }
 
 func (s *HashCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	first, _, isRoot := util.PopPath(r.URL.Path)
+	first, _, isRoot := PopPath(r.URL.Path)
 
 	if r.Method == "GET" {
 		if isRoot {
@@ -94,7 +92,7 @@ func (s *HashCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		path := s.path(hash)
-		err = util.WriteFile(path, b)
+		err = WriteFile(path, b)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

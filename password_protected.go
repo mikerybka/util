@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/mikerybka/pkg/util"
 )
 
 func PasswordProtected(passwd string, h http.Handler) http.Handler {
@@ -20,7 +18,7 @@ func PasswordProtected(passwd string, h http.Handler) http.Handler {
 			req := &struct {
 				Password string `json:"password"`
 			}{}
-			if util.ContentType(r, "application/json") {
+			if ContentType(r, "application/json") {
 				err := json.NewDecoder(r.Body).Decode(req)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusBadRequest)
