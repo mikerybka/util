@@ -1,6 +1,7 @@
 package util
 
 type ListItem struct {
-	URL  string
-	Name string
+	ID          string
+	Name        string
+	Description string
 }

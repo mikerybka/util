@@ -6,7 +6,8 @@ import (
 )
 
 type List struct {
-	Size  int
+	Path  string
+	Name  string
 	Items []ListItem
 }
 

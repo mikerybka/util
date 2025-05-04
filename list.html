@@ -1,12 +1,20 @@
-<div class="list">
-{{ range .Items }}
-    <a href="{{ .URL }}" id="">
-        <div class="list-item">
-            {{ .Name }}
+<body style="background-color: #f4f4f4; color: #333; padding: 10px;">
+    <div style="width: 100%; max-width: 480px; margin: 0 auto; padding: 10px; box-sizing: border-box;">
+        <div style="text-align: center; padding: 20px; background-color: #007bff; color: #fff; border-radius: 8px;">
+            <h1 style="margin: 0; font-family: Arial, sans-serif;">{{.Title}}</h1>
         </div>
-    </a>
-{{ end }}
-<form method="POST">
-    <input type="submit" value="Add"></input>
-</form>
-</div>
+
+        <ul style="list-style-type: none; padding: 0; margin-top: 20px;">
+            {{range .Items}}
+            <li style="background-color: #fff; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+                <a href="{{ $.Path }}/{{ .ID }}" style="text-decoration: none; color: inherit; width: 100%;">
+                    <div>
+                        <h3 style="font-size: 16px; margin: 0; font-family: Arial, sans-serif;">{{.Name}}</h3>
+                        <p style="font-size: 14px; color: #555; margin: 0; font-family: Arial, sans-serif;">{{.Description}}</p>
+                    </div>
+                </a>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+</body>
