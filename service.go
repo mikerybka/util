@@ -3,10 +3,10 @@ package util
 import "fmt"
 
 type Service struct {
-	Name  string
-	Env   map[string]string
-	Start string
-	User  string
+	Name  string            `json:"name"`
+	Env   map[string]string `json:"env"`
+	Start string            `json:"start"`
+	User  string            `json:"user"`
 }
 
 func (s *Service) Systemd() string {
