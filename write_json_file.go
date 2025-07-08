@@ -9,5 +9,5 @@ func WriteJSONFile(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	return WriteFile(path, b)
+	return WriteFile(path, append(b, '\n'))
 }
