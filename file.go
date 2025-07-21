@@ -1,7 +1,7 @@
 package util
 
-type File struct {
-	Type   string
-	Size   int
-	SHA256 string
+type File[T any] struct {
+	ID    string `json:"id"`
+	Type  string `json:"type"`
+	Value T      `json:"value"`
 }
