@@ -2,78 +2,66 @@ package util
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type FileServer struct {
-	DB *PostgresDB
+	Root string
 }
 
 func (fs *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
+	switch r.Method {
+	case "GET":
+		fs.get(w, r)
+	case "PUT":
+		fs.put(w, r)
+	case "DELETE":
+		fs.delete(w, r)
+	case "POST":
+		fs.post(w, r)
+	default:
+		http.Error(w, "method not allowed", http.StatusBadRequest)
+	}
+}
 
-	if r.Method == http.MethodGet {
-		data, err := fs.get(path)
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				w.WriteHeader(http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			w.Write([]byte(err.Error()))
-			return
+func (fs *FileServer) get(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join(fs.Root, r.URL.Path)
+	fi, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			http.Error(w, "not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		w.Write(data)
 		return
 	}
-
-	if r.Method == http.MethodPut {
-		b, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	if fi.IsDir() {
+		f := &File[Folder]{
+			ID:    r.URL.Path,
+			Type:  "folder",
+			Value: Folder{},
 		}
-		err = fs.put(path, b)
+		entries, err := os.ReadDir(path)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		return
+		for _, e := range entries {
+			if e.IsDir() {
+				f.Value.Folders = append(f.Value.Folders, e.Name())
+			} else {
+				f.Value.Files = append(f.Value.Files, e.Name())
+			}
+		}
+	} else {
+		f, err := os.Open(path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		io.Copy(w, f)
 	}
-
-	http.NotFound(w, r)
-}
-
-func (fs *FileServer) get(path string) ([]byte, error) {
-	q := `SELECT data FROM files WHERE path = $1`
-	data := []byte{}
-	err := fs.DB.Open().QueryRow(q, path).Scan(&data)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-func (fs *FileServer) put(path string, data []byte) error {
-	q := `
-		INSERT INTO files (path, data) 
-		VALUES ($1, $2)
-		ON CONFLICT (path) 
-		DO UPDATE SET data = EXCLUDED.data
-	`
-	res, err := fs.DB.Open().Exec(q, path, data)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		panic(err)
-	}
-	if rowsAffected != 1 {
-		return fmt.Errorf("expected 1 row to be updated, %d updated", rowsAffected)
-	}
-	return nil
 }
