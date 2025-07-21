@@ -65,3 +65,15 @@ func (fs *FileServer) get(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, f)
 	}
 }
+
+func (fs *FileServer) put(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (fs *FileServer) delete(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (fs *FileServer) post(w http.ResponseWriter, r *http.Request) {
+
+}
