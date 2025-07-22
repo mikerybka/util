@@ -67,13 +67,35 @@ func (fs *FileServer) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (fs *FileServer) put(w http.ResponseWriter, r *http.Request) {
-
+	path := filepath.Join(fs.Root, r.URL.Path)
+	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(f, r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (fs *FileServer) delete(w http.ResponseWriter, r *http.Request) {
-
+	path := filepath.Join(fs.Root, r.URL.Path)
+	err := os.RemoveAll(path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (fs *FileServer) post(w http.ResponseWriter, r *http.Request) {
-
+	id := RandomString(12, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	r.URL.Path = filepath.Join(r.URL.Path, id)
+	fs.put(w, r)
 }
