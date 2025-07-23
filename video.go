@@ -9,5 +9,4 @@ type Video struct {
 	AudioCodec string
 	Encoder    string
 	Container  string
-	File       *File
 }
