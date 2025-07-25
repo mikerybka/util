@@ -35,42 +35,43 @@ func (fs *JSONFileServer) get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			path = strings.TrimSuffix(path, ".json")
-			f, err := os.Open(path)
+			f := &File[Folder]{
+				ID:    r.URL.Path,
+				Type:  "folder",
+				Value: Folder{},
+			}
+			entries, err := os.ReadDir(path)
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
-					http.Error(w, "not found", http.StatusNotFound)
+					http.NotFound(w, r)
 					return
 				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			io.Copy(w, f)
+			for _, e := range entries {
+				if e.IsDir() {
+					f.Value.Folders = append(f.Value.Folders, e.Name())
+				} else {
+					if strings.HasSuffix(e.Name(), ".json") {
+						f.Value.Files = append(f.Value.Files, strings.TrimSuffix(e.Name(), ".json"))
+					}
+				}
+			}
+			json.NewEncoder(w).Encode(f)
+			return
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
-	if fi.IsDir() {
-		f := &File[Folder]{
-			ID:    r.URL.Path,
-			Type:  "folder",
-			Value: Folder{},
-		}
-		entries, err := os.ReadDir(path)
+	if !fi.IsDir() {
+		f, err := os.Open(path)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		for _, e := range entries {
-			if e.IsDir() {
-				f.Value.Folders = append(f.Value.Folders, e.Name())
-			} else {
-				if strings.HasSuffix(e.Name(), ".json") {
-					f.Value.Files = append(f.Value.Files, strings.TrimSuffix(e.Name(), ".json"))
-				}
-			}
-		}
-		json.NewEncoder(w).Encode(f)
+		io.Copy(w, f)
 		return
 	}
 	http.NotFound(w, r)
