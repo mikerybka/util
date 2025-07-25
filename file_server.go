@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -56,6 +57,7 @@ func (fs *FileServer) get(w http.ResponseWriter, r *http.Request) {
 				f.Value.Files = append(f.Value.Files, e.Name())
 			}
 		}
+		json.NewEncoder(w).Encode(f)
 	} else {
 		f, err := os.Open(path)
 		if err != nil {
