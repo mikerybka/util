@@ -44,13 +44,13 @@ func (na *NextApp) Write(dir string) error {
 	}
 
 	// Write src/types
-	for id, t := range na.Types {
-		path := filepath.Join(dir, "web/src/types", id+".ts")
-		err = t.WriteTypeScriptFile(path)
-		if err != nil {
-			return err
-		}
-	}
+	// for id, t := range na.Types {
+	// 	path := filepath.Join(dir, "web/src/types", id+".ts")
+	// 	err = t.WriteTypeScriptFile(path)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	// Write src/constants
 	for id, v := range na.Constants {
@@ -61,23 +61,23 @@ func (na *NextApp) Write(dir string) error {
 		}
 	}
 
-	// Write src/functions
-	for id, f := range na.Functions {
-		path := filepath.Join(dir, "web/src/functions", id+".ts")
-		err = f.WriteTypeScriptFile(path)
-		if err != nil {
-			return err
-		}
-	}
+	// // Write src/functions
+	// for id, f := range na.Functions {
+	// 	path := filepath.Join(dir, "web/src/functions", id+".ts")
+	// 	err = f.WriteTypeScriptFile(path)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	// Write src/hooks
-	for id, h := range na.Hooks {
-		path := filepath.Join(dir, "web/src/hooks", id+".js")
-		err = h.WriteTypeScriptFile(path)
-		if err != nil {
-			return err
-		}
-	}
+	// // Write src/hooks
+	// for id, h := range na.Hooks {
+	// 	path := filepath.Join(dir, "web/src/hooks", id+".js")
+	// 	err = h.WriteTypeScriptFile(path)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	// Write src/components
 	for id, c := range na.Components {

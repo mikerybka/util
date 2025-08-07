@@ -5,10 +5,17 @@ import (
 )
 
 type Value struct {
-	Name        Name   `json:"name"`
 	Description string `json:"description"`
-	Type        string `json:"type"`
+	Type        *Ref   `json:"type"`
 	Data        any    `json:"data"`
+}
+
+func (v *Value) GoImports() map[string]bool {
+	return v.Type.GoImports()
+}
+
+func (v *Value) GoString(imports map[string]string) string {
+	return v.Type.GoString(imports)
 }
 
 //go:embed const.ts.tmpl

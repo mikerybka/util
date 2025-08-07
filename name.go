@@ -1,6 +1,9 @@
 package util
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 func NewName(s string) Name {
 	words := strings.Split(s, " ")
@@ -42,9 +45,21 @@ func (n Name) ID() string {
 // GoExported returns an exported Go name.
 // Ex: "Green Button" => "GreenButton"
 func (n Name) GoExported() string {
+	return n.PascalCase()
+}
+
+func (n Name) PascalCase() string {
 	s := ""
 	for _, w := range n {
 		s += w.StripNonAlphaNumeric().Title().String()
 	}
 	return s
+}
+
+func (n Name) SnakeCase() string {
+	name := n.PascalCase()
+	if len(name) == 0 {
+		return name
+	}
+	return string(unicode.ToLower(rune(name[0]))) + name[1:]
 }

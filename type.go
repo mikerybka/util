@@ -1,114 +1,72 @@
 package util
 
-import (
-	"fmt"
-)
-
 type Type struct {
-	Name        Name                 `json:"name"`
-	Description string               `json:"description"`
-	IsScalar    bool                 `json:"isScalar"`
-	IsArray     bool                 `json:"isArray"`
-	IsMap       bool                 `json:"isMap"`
-	ElemType    string               `json:"elemType"`
-	IsStruct    bool                 `json:"isStruct"`
-	Fields      []Field              `json:"fields"`
-	Methods     map[string]*Function `json:"methods"`
-	DefaultJSON string               `json:"defaultJSON"`
+	Description       string               `json:"description"`
+	IsScalar          bool                 `json:"isScalar"`
+	IsArray           bool                 `json:"isArray"`
+	IsMap             bool                 `json:"isMap"`
+	ElemType          *Ref                 `json:"elemType"`
+	IsStruct          bool                 `json:"isStruct"`
+	Fields            []Field              `json:"fields"`
+	Methods           map[string]*Function `json:"methods"`
+	DefaultJSON       string               `json:"defaultJSON"`
+	LocalInstanceName string               `json:"localInstanceName"`
 }
 
-func (t *Type) WriteTypeScriptFile(path string) error {
-	if t.IsScalar {
-		st := &ScalarType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
+func (t *Type) longestFieldName() int {
+	n := 0
+	for _, f := range t.Fields {
+		name := f.Name.GoExported()
+		l := len(name)
+		if l > n {
+			n = l
 		}
-		return st.WriteTypeScriptFile(path)
 	}
-
-	if t.IsArray {
-		at := &ArrayType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
-		}
-		return at.WriteTypeScriptFile(path)
-	}
-
-	if t.IsMap {
-		mt := &MapType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
-		}
-		return mt.WriteTypeScriptFile(path)
-	}
-
-	if t.IsStruct {
-		st := &StructType{
-			Name:        t.Name,
-			Description: t.Description,
-			Fields:      t.Fields,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
-		}
-		return st.WriteTypeScriptFile(path)
-	}
-
-	return fmt.Errorf("invalid type")
+	return n
 }
 
-func (t *Type) WriteGoFile(path string) error {
+func (t *Type) GoString(imports map[string]string) string {
 	if t.IsScalar {
-		st := &ScalarType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
+		return t.ElemType.GoString(imports)
+	} else if t.IsArray {
+		return "[]" + t.ElemType.GoString(imports)
+	} else if t.IsMap {
+		return "map[string]" + t.ElemType.GoString(imports)
+	} else if t.IsStruct {
+		nameWidth := t.longestFieldName()
+		s := "struct {\n"
+		for _, f := range t.Fields {
+			s += "\t"
+			name := f.Name.GoExported()
+			s += name
+			for i := 0; i < 1+nameWidth-len(name); i++ {
+				s += " "
+			}
+			s += f.Type.GoString(imports)
+			s += "\n"
 		}
-		return st.WriteGoFile(path)
+		s += "}\n"
+		return s
+	} else {
+		panic("bad type")
 	}
+}
 
-	if t.IsArray {
-		at := &ArrayType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
+func (t *Type) GoImports() map[string]bool {
+	imports := t.ElemType.GoImports()
+	for _, f := range t.Fields {
+		for k, v := range f.GoImports() {
+			if v {
+				imports[k] = true
+			}
 		}
-		return at.WriteGoFile(path)
 	}
-
-	if t.IsMap {
-		mt := &MapType{
-			Name:        t.Name,
-			Description: t.Description,
-			ElemType:    t.ElemType,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
+	for _, m := range t.Methods {
+		for k, v := range m.GoImports() {
+			if v {
+				imports[k] = true
+			}
 		}
-		return mt.WriteGoFile(path)
 	}
-
-	if t.IsStruct {
-		st := &StructType{
-			Name:        t.Name,
-			Description: t.Description,
-			Fields:      t.Fields,
-			Methods:     t.Methods,
-			DefaultJSON: t.DefaultJSON,
-		}
-		return st.WriteGoFile(path)
-	}
-
-	return fmt.Errorf("invalid type")
+	return imports
 }

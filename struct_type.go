@@ -2,6 +2,7 @@ package util
 
 import (
 	_ "embed"
+	"os"
 )
 
 type StructType struct {
@@ -19,9 +20,7 @@ func (t *StructType) WriteTypeScriptFile(path string) error {
 	return RenderTemplateToFile(tsStructTypeTmpl, path, t)
 }
 
-//go:embed struct_type.go.tmpl
-var goStructTypeTmpl string
-
-func (t *StructType) WriteGoFile(path string) error {
-	return RenderTemplateToFile(goStructTypeTmpl, path, t)
+func (t *StructType) WriteGoFile(path, pkgName string) error {
+	f := &GoFile{}
+	return os.WriteFile(path, []byte(f.String()), os.ModePerm)
 }
