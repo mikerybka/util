@@ -6,8 +6,8 @@ import (
 
 type Value struct {
 	Description string `json:"description"`
-	Type        *Ref   `json:"type"`
-	Data        any    `json:"data"`
+	Type        *Type  `json:"type"`
+	JSON        string `json:"json"`
 }
 
 func (v *Value) GoImports() map[string]bool {

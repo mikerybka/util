@@ -1,8 +1,9 @@
 package util
 
 type Org struct {
-	Readers Set[string]
-	Writers Set[string]
+	RootDataType string
+	Readers      Set[string]
+	Writers      Set[string]
 }
 
 func (o *Org) IsReader(userID string) bool {
