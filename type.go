@@ -3,9 +3,10 @@ package util
 type Type struct {
 	Description       string               `json:"description"`
 	IsScalar          bool                 `json:"isScalar"`
+	Scalar            *Ref                 `json:"scalar"`
 	IsArray           bool                 `json:"isArray"`
 	IsMap             bool                 `json:"isMap"`
-	ElemType          *Ref                 `json:"elemType"`
+	ElemType          *Type                `json:"elemType"`
 	IsStruct          bool                 `json:"isStruct"`
 	Fields            []Field              `json:"fields"`
 	Methods           map[string]*Function `json:"methods"`
@@ -27,7 +28,7 @@ func (t *Type) longestFieldName() int {
 
 func (t *Type) GoString(imports map[string]string) string {
 	if t.IsScalar {
-		return t.ElemType.GoString(imports)
+		return t.Scalar.GoString(imports)
 	} else if t.IsArray {
 		return "[]" + t.ElemType.GoString(imports)
 	} else if t.IsMap {

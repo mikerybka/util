@@ -3,7 +3,7 @@ package util
 type Field struct {
 	Name        Name   `json:"name"`
 	Description string `json:"description"`
-	Type        *Ref   `json:"type"`
+	Type        *Type  `json:"type"`
 }
 
 func (f *Field) ID() string {

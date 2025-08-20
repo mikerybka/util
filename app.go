@@ -7,7 +7,7 @@ import (
 type App struct {
 	DataDir  string
 	Types    map[string]*Type
-	RootType string
+	RootType *Type
 }
 
 func (a App) JSONReader() *JSONReader {
