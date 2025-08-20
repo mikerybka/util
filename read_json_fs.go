@@ -8,17 +8,7 @@ import (
 	"strconv"
 )
 
-func NewJSONReader(types map[string]*Type) *JSONReader {
-	return &JSONReader{
-		Types: types,
-	}
-}
-
-type JSONReader struct {
-	Types map[string]*Type
-}
-
-func (r *JSONReader) Read(w io.Writer, t *Type, path string) error {
+func ReadJSONFS(w io.Writer, t *Type, path string) error {
 	if t.IsScalar {
 		f, err := os.Open(path)
 		if err != nil {
@@ -42,7 +32,7 @@ func (r *JSONReader) Read(w io.Writer, t *Type, path string) error {
 			if i > 0 {
 				fmt.Fprintf(w, ",")
 			}
-			err = r.Read(w, t.ElemType, elPath)
+			err = ReadJSONFS(w, t.ElemType, elPath)
 			if err != nil {
 				return err
 			}
@@ -68,7 +58,7 @@ func (r *JSONReader) Read(w io.Writer, t *Type, path string) error {
 			if err != nil {
 				return err
 			}
-			err = r.Read(w, t.ElemType, filepath.Join(path, e.Name()))
+			err = ReadJSONFS(w, t.ElemType, filepath.Join(path, e.Name()))
 			if err != nil {
 				return err
 			}
@@ -89,7 +79,7 @@ func (r *JSONReader) Read(w io.Writer, t *Type, path string) error {
 			if err != nil {
 				return err
 			}
-			err = r.Read(w, f.Type, filepath.Join(path, f.ID()))
+			err = ReadJSONFS(w, f.Type, filepath.Join(path, f.ID()))
 			if err != nil {
 				return err
 			}

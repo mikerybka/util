@@ -10,10 +10,6 @@ type App struct {
 	RootType *Type
 }
 
-func (a App) JSONReader() *JSONReader {
-	return NewJSONReader(a.Types)
-}
-
 func (a App) HTMLReader() *HTMLReader {
 	return NewHTMLReader(a.Types)
 }
@@ -30,7 +26,5 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (a *App) Get(w http.ResponseWriter, r *http.Request) {
 	if Accept(r, "text/html") {
 		a.HTMLReader().Read(w, a.RootType, r.URL.Path)
-	} else {
-		a.JSONReader().Read(w, a.RootType, r.URL.Path)
 	}
 }
